@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 
+import Calendar from 'react-calendar';
+
+import 'react-calendar/dist/Calendar.css';
+
 import AppLayout from '../components/AppLayout';
 
 import {
@@ -12,6 +16,8 @@ import {
 import {
   useAuthStore
 } from '../store/authStore';
+
+import '../calendar.css';
 
 interface RecentSale {
   invoice_number: string;
@@ -55,6 +61,33 @@ export default function DashboardPage() {
 
   const [loading, setLoading] =
     useState(true);
+
+  /* =========================
+     Clock & Calendar
+  ========================= */
+
+  const [currentTime, setCurrentTime] =
+    useState(new Date());
+
+  const [selectedDate, setSelectedDate] =
+    useState(new Date());
+
+  const [notes, setNotes] =
+    useState<Record<string, string>>(() => {
+
+      const savedNotes =
+        localStorage.getItem(
+          'dashboard-notes'
+        );
+
+      return savedNotes
+        ? JSON.parse(savedNotes)
+        : {};
+
+    });
+
+  const selectedDateKey =
+    selectedDate.toDateString();
 
   /* =========================
      Load Dashboard
@@ -106,6 +139,35 @@ export default function DashboardPage() {
   }, [user]);
 
   /* =========================
+     Real-Time Clock
+  ========================= */
+
+  useEffect(() => {
+
+    const interval = setInterval(() => {
+
+      setCurrentTime(new Date());
+
+    }, 1000);
+
+    return () => clearInterval(interval);
+
+  }, []);
+
+  /* =========================
+     Save Notes
+  ========================= */
+
+  useEffect(() => {
+
+    localStorage.setItem(
+      'dashboard-notes',
+      JSON.stringify(notes)
+    );
+
+  }, [notes]);
+
+  /* =========================
      Loading State
   ========================= */
 
@@ -137,21 +199,104 @@ export default function DashboardPage() {
 
         {/* Header */}
 
-        <div>
+        <div className="
+          flex
+          flex-col
+          lg:flex-row
+          lg:items-start
+          lg:justify-between
+          gap-4
+        ">
 
-          <h1 className="text-3xl font-semibold tracking-tight">
+          <div>
 
-            {user?.business_id === 1
-              ? 'Hardware Dashboard'
-              : 'MotorShop Dashboard'}
+            <h1 className="text-3xl font-semibold tracking-tight">
 
-          </h1>
+              {user?.business_id === 1
+                ? 'Hardware Dashboard'
+                : 'MotorShop Dashboard'}
 
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            </h1>
 
-            Overview of your sales, inventory, and business activity.
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
 
-          </p>
+              Overview of your sales, inventory, and business activity.
+
+            </p>
+
+          </div>
+
+          {/* Real-Time Clock */}
+
+          <div className="
+            bg-white
+            dark:bg-zinc-900
+            border
+            border-zinc-200
+            dark:border-zinc-800
+            rounded-xl
+            px-5
+            py-3
+            shadow-sm
+            min-w-[340px]
+            flex
+            items-center
+            justify-between
+            gap-6
+          ">
+
+            <div>
+
+              <p className="
+                text-xs
+                uppercase
+                tracking-wide
+                text-zinc-500
+                dark:text-zinc-400
+              ">
+                Philippine Time
+              </p>
+
+              <p className="
+                text-sm
+                text-zinc-500
+                dark:text-zinc-400
+                mt-1
+              ">
+
+                {currentTime.toLocaleDateString(
+                  'en-PH',
+                  {
+                    timeZone: 'Asia/Manila',
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  }
+                )}
+
+              </p>
+
+            </div>
+
+            <h2 className="
+              text-2xl
+              font-bold
+              tracking-tight
+              whitespace-nowrap
+            ">
+
+              {currentTime.toLocaleTimeString(
+                'en-PH',
+                {
+                  timeZone: 'Asia/Manila',
+                  hour12: true
+                }
+              )}
+
+            </h2>
+
+          </div>
 
         </div>
 
@@ -372,6 +517,152 @@ export default function DashboardPage() {
               </button>
 
             ))}
+
+          </div>
+
+        </div>
+
+        {/* Calendar & Notes */}
+
+        <div className="
+          grid
+          grid-cols-1
+          xl:grid-cols-2
+          gap-6
+        ">
+
+          {/* Calendar */}
+
+          <div className="
+            bg-white
+            dark:bg-zinc-900
+            border
+            border-zinc-200
+            dark:border-zinc-800
+            rounded-xl
+            p-6
+            shadow-sm
+          ">
+
+            <div className="mb-5">
+
+              <h2 className="
+                text-2xl
+                font-semibold
+                tracking-tight
+              ">
+                Business Calendar
+              </h2>
+
+              <p className="
+                text-sm
+                text-zinc-500
+                dark:text-zinc-400
+                mt-1
+              ">
+                Track business events, reminders,
+                expenses, and activities.
+              </p>
+
+            </div>
+
+            <div className="
+              w-full
+              rounded-xl
+              border
+              border-zinc-200
+              dark:border-zinc-700
+              p-4
+            ">
+
+              <Calendar
+                calendarType="gregory"
+                onChange={(value) =>
+                  setSelectedDate(value as Date)
+                }
+                value={selectedDate}
+                className="w-full border-none"
+              />
+
+            </div>
+
+          </div>
+
+          {/* Notes */}
+
+          <div className="
+            bg-white
+            dark:bg-zinc-900
+            border
+            border-zinc-200
+            dark:border-zinc-800
+            rounded-lg
+            p-6
+            shadow-sm
+          ">
+
+            <div className="mb-4">
+
+              <h2 className="text-xl font-semibold">
+                Daily Notes
+              </h2>
+
+              <p className="
+                text-sm
+                text-zinc-500
+                dark:text-zinc-400
+                mt-1
+              ">
+
+                Notes for{' '}
+
+                <span className="font-medium">
+
+                  {selectedDate.toLocaleDateString(
+                    'en-PH',
+                    {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }
+                  )}
+
+                </span>
+
+              </p>
+
+            </div>
+
+            <textarea
+              value={notes[selectedDateKey] || ''}
+              onChange={(e) =>
+                setNotes({
+                  ...notes,
+                  [selectedDateKey]:
+                    e.target.value
+                })
+              }
+              placeholder="
+Add reminders, expenses, supplier visits,
+inventory deliveries, sales events, etc.
+              "
+              className="
+                w-full
+                h-64
+                rounded-lg
+                border
+                border-zinc-200
+                dark:border-zinc-700
+                bg-transparent
+                p-4
+                resize-none
+                outline-none
+                focus:ring-2
+                focus:ring-zinc-400
+                dark:focus:ring-zinc-600
+              "
+            />
 
           </div>
 
