@@ -20,26 +20,46 @@ export const getExpenses =
       endDate
     } = req.query;
 
-    db.query(
+    let query = `
+      SELECT
+        expenses.*,
+        users.name
+      FROM expenses
+      LEFT JOIN users
+      ON users.id = expenses.user_id
+      WHERE expenses.business_id = ?
+    `;
 
-      `
-        SELECT
-          expenses.*,
-          users.name AS username
-        FROM expenses
-        LEFT JOIN users
-        ON users.id = expenses.user_id
-        WHERE expenses.business_id = ?
+    const queryParams: any[] = [
+      business_id
+    ];
+
+    if (
+      startDate &&
+      endDate
+    ) {
+
+      query += `
         AND DATE(expenses.created_at)
         BETWEEN ? AND ?
-        ORDER BY expenses.created_at DESC
-      `,
+      `;
 
-      [
-        business_id,
+      queryParams.push(
         startDate,
         endDate
-      ],
+      );
+
+    }
+
+    query += `
+      ORDER BY expenses.created_at DESC
+    `;
+
+    db.query(
+
+      query,
+
+      queryParams,
 
       (
         error: any,

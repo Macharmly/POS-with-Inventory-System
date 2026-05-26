@@ -55,6 +55,10 @@ export default function FinancePage() {
     setMessage] =
     useState('');
 
+  const [filterPeriod,
+    setFilterPeriod] =
+    useState('This Month');
+
   /* =========================
      Load Expenses
   ========================= */
@@ -150,36 +154,84 @@ export default function FinancePage() {
 
     };
 
-  /* =========================
-     Finance Summary
-  ========================= */
+      /* =========================
+        Filter Expenses
+      ========================= */
 
-  const totalExpenses =
+      const now = new Date();
 
-    expenses.reduce(
+      const filteredExpenses =
+        expenses.filter((expense) => {
 
-      (sum, expense) =>
+          const expenseDate =
+            new Date(
+              expense.created_at.replace(
+                ' ',
+                'T'
+              )
+            );
 
-        sum +
-        Number(expense.amount),
+          if (
+            filterPeriod === 'Today'
+          ) {
 
-      0
+            return (
+              expenseDate.toDateString() ===
+              now.toDateString()
+            );
 
-    );
+          }
 
-  const personalWithdrawals =
+          if (
+            filterPeriod === 'This Week'
+          ) {
 
-    expenses
-      .filter(
+            const startOfWeek =
+              new Date(now);
 
-        (expense) =>
+            startOfWeek.setDate(
+              now.getDate() -
+              now.getDay()
+            );
 
-          expense.category ===
-          'Personal Withdrawal'
+            startOfWeek.setHours(
+              0,
+              0,
+              0,
+              0
+            );
 
-      )
+            return (
+              expenseDate >= startOfWeek
+            );
 
-      .reduce(
+          }
+
+          if (
+            filterPeriod === 'This Month'
+          ) {
+
+            return (
+
+              expenseDate.getMonth() ===
+                now.getMonth()
+
+              &&
+
+              expenseDate.getFullYear() ===
+                now.getFullYear()
+
+            );
+
+          }
+
+          return true;
+
+        });
+
+    const totalExpenses =
+
+      filteredExpenses.reduce(
 
         (sum, expense) =>
 
@@ -189,6 +241,29 @@ export default function FinancePage() {
         0
 
       );
+
+    const personalWithdrawals =
+
+      filteredExpenses
+        .filter(
+
+          (expense) =>
+
+            expense.category ===
+            'Personal Withdrawal'
+
+        )
+
+        .reduce(
+
+          (sum, expense) =>
+
+            sum +
+            Number(expense.amount),
+
+          0
+
+        );
 
   return (
 
@@ -521,14 +596,72 @@ export default function FinancePage() {
             border-b
             border-zinc-200
             dark:border-zinc-800
+            flex
+            flex-col
+            md:flex-row
+            md:items-center
+            md:justify-between
+            gap-4
           ">
 
-            <h2 className="
-              text-lg
-              font-semibold
-            ">
-              Expense History
-            </h2>
+            <div>
+
+              <h2 className="
+                text-lg
+                font-semibold
+              ">
+                Expense History
+              </h2>
+
+              <p className="
+                text-sm
+                text-zinc-500
+                dark:text-zinc-400
+                mt-1
+              ">
+                View and filter your past expenses.
+              </p>
+
+            </div>
+
+            <select
+              value={filterPeriod}
+              onChange={(e) =>
+                setFilterPeriod(
+                  e.target.value
+                )
+              }
+              className="
+                border
+                border-zinc-200
+                dark:border-zinc-700
+                bg-white
+                dark:bg-zinc-900
+                rounded-lg
+                px-4
+                py-2
+                text-sm
+                outline-none
+              "
+            >
+
+              <option>
+                Today
+              </option>
+
+              <option>
+                This Week
+              </option>
+
+              <option>
+                This Month
+              </option>
+
+              <option>
+                All Time
+              </option>
+
+            </select>
 
           </div>
 
@@ -543,7 +676,7 @@ export default function FinancePage() {
               Loading expenses...
             </div>
 
-          ) : expenses.length === 0 ? (
+          ) : filteredExpenses.length === 0 ? (
 
             <div className="
               p-6
@@ -614,6 +747,16 @@ export default function FinancePage() {
                       text-sm
                       font-medium
                     ">
+                      Notes
+                    </th>
+
+                    <th className="
+                      text-left
+                      px-6
+                      py-3
+                      text-sm
+                      font-medium
+                    ">
                       Added By
                     </th>
 
@@ -623,7 +766,7 @@ export default function FinancePage() {
 
                 <tbody>
 
-                  {expenses.map((expense) => (
+                  {filteredExpenses.map((expense) => (
 
                     <tr
                       key={expense.id}
@@ -631,6 +774,9 @@ export default function FinancePage() {
                         border-t
                         border-zinc-200
                         dark:border-zinc-800
+                        hover:bg-zinc-50
+                        dark:hover:bg-zinc-800/50
+                        transition
                       "
                     >
 
@@ -638,11 +784,19 @@ export default function FinancePage() {
                         px-6
                         py-4
                         text-sm
+                        whitespace-nowrap
                       ">
 
                         {new Date(
                           expense.created_at
-                        ).toLocaleDateString()}
+                        ).toLocaleDateString(
+                          'en-PH',
+                          {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          }
+                        )}
 
                       </td>
 
@@ -660,7 +814,21 @@ export default function FinancePage() {
                         py-4
                         text-sm
                       ">
-                        {expense.category}
+
+                        <span className="
+                          inline-flex
+                          items-center
+                          rounded-full
+                          bg-zinc-100
+                          dark:bg-zinc-800
+                          px-3
+                          py-1
+                          text-xs
+                          font-medium
+                        ">
+                          {expense.category}
+                        </span>
+
                       </td>
 
                       <td className="
@@ -668,7 +836,8 @@ export default function FinancePage() {
                         py-4
                         text-sm
                         text-red-500
-                        font-medium
+                        font-semibold
+                        whitespace-nowrap
                       ">
 
                         ₱
@@ -680,6 +849,23 @@ export default function FinancePage() {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                           }
+                        )}
+
+                      </td>
+
+                      <td className="
+                        px-6
+                        py-4
+                        text-sm
+                        text-zinc-600
+                        dark:text-zinc-400
+                        max-w-[260px]
+                      ">
+
+                        {expense.notes || (
+                          <span className="italic">
+                            No notes
+                          </span>
                         )}
 
                       </td>
