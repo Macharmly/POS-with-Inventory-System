@@ -49,6 +49,10 @@ export default function POSPage() {
     setPaymentMethod] =
     useState('cash');
 
+  const [cashReceived,
+    setCashReceived] =
+    useState('');
+
   const [mobileCartOpen,
     setMobileCartOpen] =
     useState(false);
@@ -158,11 +162,11 @@ export default function POSPage() {
       }
 
       return [
-        ...prevCart,
         {
           ...product,
           quantity: 1
-        }
+        },
+        ...prevCart
       ];
 
     });
@@ -202,9 +206,28 @@ export default function POSPage() {
     cartTotal -
     discountAmount;
 
+  const cashAmount =
+    Number(cashReceived) || 0;
+
+  const change =
+    cashAmount - finalTotal;
+
   const handleCheckout = async () => {
 
     if (!user) return;
+
+    if (
+      paymentMethod === 'cash' &&
+      cashAmount < finalTotal
+    ) {
+
+      setMessage(
+        'Insufficient cash received.'
+      );
+
+      return;
+
+    }
 
     try {
 
@@ -239,6 +262,8 @@ export default function POSPage() {
       setCart([]);
 
       setDiscountPercent('');
+
+      setCashReceived('');
 
       setPaymentMethod('cash');
 
@@ -287,7 +312,9 @@ export default function POSPage() {
     );
   }
 
-  const CartContent = () => (
+  const CartContent = () => {
+
+    return (
 
     <>
 
@@ -412,17 +439,17 @@ export default function POSPage() {
               border
               border-zinc-200
               dark:border-zinc-800
-              rounded-2xl
-              p-4
+              rounded-xl
+              p-3
             "
           >
 
             <div
               className="
                 flex
-                items-start
+                items-center
                 justify-between
-                gap-4
+                gap-2
               "
             >
 
@@ -479,8 +506,8 @@ export default function POSPage() {
                 flex
                 items-center
                 justify-between
-                mt-4
-                gap-4
+                mt-3
+                gap-3
               "
             >
 
@@ -490,11 +517,7 @@ export default function POSPage() {
                 className="
                   flex
                   items-center
-                  border
-                  border-zinc-200
-                  dark:border-zinc-700
-                  rounded-xl
-                  overflow-hidden
+                  gap-2
                 "
               >
 
@@ -530,11 +553,16 @@ export default function POSPage() {
 
                   }}
                   className="
-                    px-3
-                    py-2
-                    hover:bg-zinc-100
-                    dark:hover:bg-zinc-800
-                    transition
+                    h-7
+                    w-7
+                    rounded-full
+                    bg-zinc-100
+                    dark:bg-zinc-800
+                    flex
+                    items-center
+                    justify-center
+                    text-xs
+                    font-bold
                   "
                 >
                   -
@@ -544,9 +572,10 @@ export default function POSPage() {
 
                 <span
                   className="
-                    px-4
                     text-sm
                     font-medium
+                    min-w-[20px]
+                    text-center
                   "
                 >
                   {item.quantity}
@@ -588,11 +617,16 @@ export default function POSPage() {
 
                   }}
                   className="
-                    px-3
-                    py-2
-                    hover:bg-zinc-100
-                    dark:hover:bg-zinc-800
-                    transition
+                    h-7
+                    w-7
+                    rounded-full
+                    bg-zinc-100
+                    dark:bg-zinc-800
+                    flex
+                    items-center
+                    justify-center
+                    text-xs
+                    font-bold
                   "
                 >
                   +
@@ -602,31 +636,23 @@ export default function POSPage() {
 
               {/* Item Total */}
 
-              <div className="text-right">
+              <span
+                className="
+                  text-sm
+                  font-semibold
+                  shrink-0
+                "
+              >
 
-                <p
-                  className="
-                    text-xs
-                    text-zinc-500
-                    dark:text-zinc-400
-                  "
-                >
-                  Total
-                </p>
+                ₱
+                {(
+                  Number(
+                    item.selling_price
+                  ) *
+                  item.quantity
+                ).toFixed(2)}
 
-                <p className="font-semibold">
-
-                  ₱
-                  {(
-                    Number(
-                      item.selling_price
-                    ) *
-                    item.quantity
-                  ).toFixed(2)}
-
-                </p>
-
-              </div>
+              </span>
 
             </div>
 
@@ -704,6 +730,60 @@ export default function POSPage() {
               </option>
 
             </select>
+
+          </div>
+
+          {/* Cash Received */}
+
+          <div
+            className={`
+              space-y-2
+              ${
+                paymentMethod === 'cash'
+                  ? 'block'
+                  : 'hidden'
+              }
+            `}
+          >
+
+            <label
+              className="
+                text-sm
+                font-medium
+                text-zinc-700
+                dark:text-zinc-300
+              "
+            >
+              Cash Received
+            </label>
+
+            <input
+              type="number"
+              min={0}
+              value={cashReceived}
+              onChange={(e) =>
+                setCashReceived(
+                  e.target.value
+                )
+              }
+              placeholder="Enter cash amount"
+              className="
+                w-full
+                bg-white
+                dark:bg-zinc-900
+                border
+                border-zinc-200
+                dark:border-zinc-800
+                rounded-xl
+                px-4
+                py-3
+                text-sm
+                focus:outline-none
+                focus:ring-2
+                focus:ring-zinc-300
+                dark:focus:ring-zinc-700
+              "
+            />
 
           </div>
 
@@ -873,6 +953,52 @@ export default function POSPage() {
 
             </div>
 
+            {/* Change */}
+
+            {paymentMethod === 'cash' &&
+            cashReceived && (
+
+              <div
+                className="
+                  flex
+                  justify-between
+                  items-center
+                  pt-2
+                "
+              >
+
+                <span
+                  className="
+                    text-sm
+                    font-medium
+                    text-zinc-500
+                    dark:text-zinc-400
+                  "
+                >
+                  Change
+                </span>
+
+                <span
+                  className={`
+                    text-lg
+                    font-semibold
+                    ${
+                      change < 0
+                        ? 'text-red-500'
+                        : 'text-emerald-500'
+                    }
+                  `}
+                >
+
+                  ₱
+                  {Math.abs(change).toFixed(2)}
+
+                </span>
+
+              </div>
+
+            )}
+
           </div>
 
           <button
@@ -900,7 +1026,8 @@ export default function POSPage() {
 
     </>
 
-  );
+    );
+    };
 
   return (
 
@@ -1154,7 +1281,7 @@ export default function POSPage() {
             "
           >
 
-            <CartContent />
+            {CartContent()}
 
           </div>
 
@@ -1455,7 +1582,7 @@ export default function POSPage() {
               "
             />
 
-            <CartContent />
+            {CartContent()}
 
           </div>
 
