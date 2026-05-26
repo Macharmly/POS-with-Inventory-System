@@ -12,6 +12,7 @@ export const rolePermissions = {
     '/reports',
     '/reports/sales',
     '/reports/low-stock',
+    '/reports/product-performance',
     '/users',
     '/profile',
     '/inventory-reports',
@@ -40,7 +41,8 @@ export const rolePermissions = {
     '/profile',
     '/inventory-reports',
     '/reports',
-    '/reports/low-stock'
+    '/reports/low-stock',
+    '/reports/product-performance'
 
   ],
 
@@ -53,6 +55,7 @@ export const rolePermissions = {
     '/reports',
     '/reports/sales',
     '/reports/low-stock',
+    '/reports/product-performance',
     '/profile',
     '/inventory-reports',
     '/reports/profit',

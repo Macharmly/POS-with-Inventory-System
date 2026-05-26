@@ -5,8 +5,9 @@ import authRoutes from './routes/authRoutes';
 import salesRoutes from './routes/salesRoutes';
 import userRoutes from './routes/userRoutes';
 
-import financeRoutes
-from './routes/financeRoutes';
+import financeRoutes from './routes/financeRoutes';
+
+import reportRoutes from './routes/reportRoutes';
 
 import connection from './dbConnection';
 
@@ -55,6 +56,11 @@ app.use(
 app.use(
   '/api/finance',
   financeRoutes
+);
+
+app.use(
+  '/api',
+  reportRoutes
 );
 
 /* =========================

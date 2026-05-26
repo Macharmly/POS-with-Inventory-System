@@ -2,9 +2,17 @@ import { useNavigate } from 'react-router-dom';
 
 import AppLayout from '../components/AppLayout';
 
+import {
+  useAuthStore
+} from '../store/authStore';
+
 export default function ReportsPage() {
 
   const navigate = useNavigate();
+
+  const user = useAuthStore(
+    (state) => state.user
+  );
 
   const reports = [
 
@@ -37,11 +45,26 @@ export default function ReportsPage() {
     },
 
     {
-      title: 'Service Report',
+      title: 'Product Performance Report',
       description:
-        'Review MotorShop service transactions and labor revenue.',
-      route: '/reports/services'
-    }
+        'Analyze best-selling and least-purchased products.',
+      route: '/reports/product-performance'
+    },
+
+    ...(user?.business_id === 2
+
+      ? [
+
+          {
+            title: 'Service Report',
+            description:
+              'Review MotorShop service transactions and labor revenue.',
+            route: '/reports/services'
+          }
+
+        ]
+
+      : [])
 
   ];
 
