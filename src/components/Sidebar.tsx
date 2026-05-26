@@ -507,6 +507,31 @@ export default function Sidebar() {
 
           </div>
 
+          {/* Version + Copyright */}
+
+          <div
+            className="
+              mt-4
+              text-[10px]
+              text-zinc-400
+              dark:text-zinc-500
+              leading-relaxed
+              text-center
+              space-y-1
+            "
+          >
+
+            <p>
+              Version 0.1.0
+            </p>
+
+            <p>
+              © 2026 RomaOne
+              All Rights Reserved
+            </p>
+
+          </div>
+
         </div>
 
       </div>
