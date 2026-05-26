@@ -337,8 +337,7 @@ export default function InventoryAdjustmentPage() {
                   )
                 }
                 rows={4}
-                placeholder="
-                  Example:
+                placeholder="Example:
                   Damaged products,
                   manual correction,
                   expired items...

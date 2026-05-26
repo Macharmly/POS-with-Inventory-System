@@ -16,6 +16,8 @@ export interface Product {
 
   stock_quantity: number;
 
+  low_stock_threshold: number;
+
 }
 
 export interface CartItem

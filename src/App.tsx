@@ -18,6 +18,7 @@ import ReportsPage from './pages/ReportsPage';
 import SalesReportPage from './pages/SalesReportPage';
 import UserManagementPage from './pages/UserManagementPage';
 import FinancePage from './pages/FinancePage';
+import LowStockReportPage from './pages/LowStockReportPage';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
 import ProfilePage from './pages/ProfilePage';
 
@@ -117,6 +118,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <FinancePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/reports/low-stock"
+          element={
+            <ProtectedRoute>
+              <LowStockReportPage />
             </ProtectedRoute>
           }
         />
