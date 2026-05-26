@@ -854,10 +854,7 @@ export default function POSPage() {
 
               <input
                 type="text"
-                placeholder="
-                  Search by product,
-                  SKU, or category...
-                "
+                placeholder="Search by product, SKU, or category..."
                 value={search}
                 onChange={(e) =>
                   setSearch(

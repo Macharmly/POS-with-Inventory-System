@@ -55,6 +55,12 @@ export default function DashboardPage() {
 
     });
 
+  const [isEditing, setIsEditing] =
+    useState(false);
+
+  const [tempNote, setTempNote] =
+    useState('');
+
   const [lowStockProducts,
     setLowStockProducts] =
     useState<LowStockProduct[]>([]);
@@ -154,18 +160,33 @@ export default function DashboardPage() {
 
   }, []);
 
-  /* =========================
-     Save Notes
-  ========================= */
+    /* =========================
+      Save Notes
+    ========================= */
 
-  useEffect(() => {
+    useEffect(() => {
 
-    localStorage.setItem(
-      'dashboard-notes',
-      JSON.stringify(notes)
-    );
+      localStorage.setItem(
+        'dashboard-notes',
+        JSON.stringify(notes)
+      );
 
-  }, [notes]);
+    }, [notes]);
+
+    /* =========================
+      Sync Notes Per Date
+    ========================= */
+
+    useEffect(() => {
+
+      const currentNote =
+        notes[selectedDateKey] || '';
+
+      setTempNote(currentNote);
+
+      setIsEditing(!currentNote);
+
+    }, [selectedDateKey, notes]);
 
   /* =========================
      Loading State
@@ -590,29 +611,35 @@ export default function DashboardPage() {
 
           {/* Notes */}
 
-          <div className="
-            bg-white
-            dark:bg-zinc-900
-            border
-            border-zinc-200
-            dark:border-zinc-800
-            rounded-lg
-            p-6
-            shadow-sm
-          ">
+          <div
+            className="
+              bg-white
+              dark:bg-zinc-900
+              border
+              border-zinc-200
+              dark:border-zinc-800
+              rounded-xl
+              p-6
+              shadow-sm
+              flex
+              flex-col
+            "
+          >
 
             <div className="mb-4">
 
-              <h2 className="text-xl font-semibold">
+              <h2 className="text-2xl font-semibold tracking-tight">
                 Daily Notes
               </h2>
 
-              <p className="
-                text-sm
-                text-zinc-500
-                dark:text-zinc-400
-                mt-1
-              ">
+              <p
+                className="
+                  text-sm
+                  text-zinc-500
+                  dark:text-zinc-400
+                  mt-1
+                "
+              >
 
                 Notes for{' '}
 
@@ -635,34 +662,168 @@ export default function DashboardPage() {
             </div>
 
             <textarea
-              value={notes[selectedDateKey] || ''}
+              value={tempNote}
+              readOnly={!isEditing}
               onChange={(e) =>
-                setNotes({
-                  ...notes,
-                  [selectedDateKey]:
-                    e.target.value
-                })
+                setTempNote(e.target.value)
               }
               placeholder="
-Add reminders, expenses, supplier visits,
-inventory deliveries, sales events, etc.
+          Add reminders, expenses, supplier visits,
+          inventory deliveries, sales events, etc.
               "
-              className="
+              className={`
                 w-full
-                h-64
-                rounded-lg
+                min-h-[220px]
+                rounded-xl
                 border
-                border-zinc-200
-                dark:border-zinc-700
                 bg-transparent
                 p-4
                 resize-none
                 outline-none
-                focus:ring-2
-                focus:ring-zinc-400
-                dark:focus:ring-zinc-600
-              "
+                text-sm
+                leading-relaxed
+                transition-all
+                duration-200
+
+                ${
+                  isEditing
+                    ? `
+                      border-zinc-300
+                      dark:border-zinc-700
+                      focus:ring-2
+                      focus:ring-zinc-400
+                      dark:focus:ring-zinc-600
+                    `
+                    : `
+                      border-zinc-200
+                      dark:border-zinc-800
+                      text-zinc-500
+                      dark:text-zinc-400
+                      cursor-default
+                    `
+                }
+              `}
             />
+
+            {/* Action Buttons */}
+
+            <div
+              className="
+                flex
+                items-center
+                justify-between
+                gap-3
+                mt-4
+                flex-wrap
+              "
+            >
+
+              <div className="flex items-center gap-2">
+
+                {!isEditing ? (
+
+                  <button
+                    onClick={() =>
+                      setIsEditing(true)
+                    }
+                    className="
+                      px-4
+                      py-2
+                      rounded-lg
+                      bg-zinc-900
+                      dark:bg-white
+                      text-white
+                      dark:text-black
+                      text-sm
+                      font-medium
+                      transition
+                      hover:opacity-90
+                    "
+                  >
+                    Edit
+                  </button>
+
+                ) : (
+
+                  <button
+                    onClick={() => {
+
+                      setNotes({
+                        ...notes,
+                        [selectedDateKey]:
+                          tempNote
+                      });
+
+                      setIsEditing(false);
+
+                    }}
+                    className="
+                      px-4
+                      py-2
+                      rounded-lg
+                      bg-green-600
+                      text-white
+                      text-sm
+                      font-medium
+                      transition
+                      hover:bg-green-700
+                    "
+                  >
+                    Save
+                  </button>
+
+                )}
+
+                <button
+                  onClick={() => {
+
+                    const updatedNotes = {
+                      ...notes
+                    };
+
+                    delete updatedNotes[
+                      selectedDateKey
+                    ];
+
+                    setNotes(updatedNotes);
+
+                    setTempNote('');
+
+                    setIsEditing(true);
+
+                  }}
+                  className="
+                    px-4
+                    py-2
+                    rounded-lg
+                    border
+                    border-red-300
+                    text-red-600
+                    text-sm
+                    font-medium
+                    transition
+                    hover:bg-red-50
+                    dark:hover:bg-red-950/30
+                  "
+                >
+                  Delete
+                </button>
+
+              </div>
+
+              <p
+                className="
+                  text-xs
+                  text-zinc-500
+                  dark:text-zinc-400
+                "
+              >
+
+                {tempNote.length} characters
+
+              </p>
+
+            </div>
 
           </div>
 
