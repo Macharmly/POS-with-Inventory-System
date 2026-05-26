@@ -10,7 +10,8 @@ import {
   adjustInventory,
   getServices,
   createService,
-  getSalesReport
+  getSalesReport,
+  getProfitReport
 } from '../controllers/salesController';
 
 const router = express.Router();
@@ -60,6 +61,11 @@ router.post(
 router.get(
   '/reports/sales',
   getSalesReport
+);
+
+router.get(
+  '/reports/profit/:business_id',
+  getProfitReport
 );
 
 export default router;

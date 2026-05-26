@@ -19,6 +19,7 @@ import SalesReportPage from './pages/SalesReportPage';
 import UserManagementPage from './pages/UserManagementPage';
 import FinancePage from './pages/FinancePage';
 import LowStockReportPage from './pages/LowStockReportPage';
+import ProfitReportPage from './pages/ProfitReportPage';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
 import ProfilePage from './pages/ProfilePage';
 
@@ -127,6 +128,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <LowStockReportPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/reports/profit"
+          element={
+            <ProtectedRoute>
+              <ProfitReportPage />
             </ProtectedRoute>
           }
         />
