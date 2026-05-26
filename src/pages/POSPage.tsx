@@ -477,33 +477,156 @@ export default function POSPage() {
             <div
               className="
                 flex
-                justify-between
                 items-center
+                justify-between
                 mt-4
+                gap-4
               "
             >
 
-              <span
+              {/* Quantity Controls */}
+
+              <div
                 className="
-                  text-sm
-                  text-zinc-500
-                  dark:text-zinc-400
+                  flex
+                  items-center
+                  border
+                  border-zinc-200
+                  dark:border-zinc-700
+                  rounded-xl
+                  overflow-hidden
                 "
               >
-                Total
-              </span>
 
-              <span className="font-semibold">
+                {/* Minus */}
 
-                ₱
-                {(
-                  Number(
-                    item.selling_price
-                  ) *
-                  item.quantity
-                ).toFixed(2)}
+                <button
+                  onClick={() => {
 
-              </span>
+                    setCart((prevCart) =>
+                      prevCart
+                        .map((cartItem) => {
+
+                          if (
+                            cartItem.id === item.id
+                          ) {
+
+                            return {
+                              ...cartItem,
+                              quantity:
+                                cartItem.quantity - 1
+                            };
+
+                          }
+
+                          return cartItem;
+
+                        })
+                        .filter(
+                          (cartItem) =>
+                            cartItem.quantity > 0
+                        )
+                    );
+
+                  }}
+                  className="
+                    px-3
+                    py-2
+                    hover:bg-zinc-100
+                    dark:hover:bg-zinc-800
+                    transition
+                  "
+                >
+                  -
+                </button>
+
+                {/* Quantity */}
+
+                <span
+                  className="
+                    px-4
+                    text-sm
+                    font-medium
+                  "
+                >
+                  {item.quantity}
+                </span>
+
+                {/* Plus */}
+
+                <button
+                  onClick={() => {
+
+                    if (
+                      item.quantity >=
+                      item.stock_quantity
+                    ) {
+
+                      alert(
+                        'Cannot exceed available stock.'
+                      );
+
+                      return;
+
+                    }
+
+                    setCart((prevCart) =>
+                      prevCart.map(
+                        (cartItem) =>
+
+                          cartItem.id === item.id
+
+                            ? {
+                                ...cartItem,
+                                quantity:
+                                  cartItem.quantity + 1
+                              }
+
+                            : cartItem
+                      )
+                    );
+
+                  }}
+                  className="
+                    px-3
+                    py-2
+                    hover:bg-zinc-100
+                    dark:hover:bg-zinc-800
+                    transition
+                  "
+                >
+                  +
+                </button>
+
+              </div>
+
+              {/* Item Total */}
+
+              <div className="text-right">
+
+                <p
+                  className="
+                    text-xs
+                    text-zinc-500
+                    dark:text-zinc-400
+                  "
+                >
+                  Total
+                </p>
+
+                <p className="font-semibold">
+
+                  ₱
+                  {(
+                    Number(
+                      item.selling_price
+                    ) *
+                    item.quantity
+                  ).toFixed(2)}
+
+                </p>
+
+              </div>
 
             </div>
 
