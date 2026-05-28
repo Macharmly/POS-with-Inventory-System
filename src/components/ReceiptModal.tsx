@@ -213,10 +213,13 @@ export default function ReceiptModal({
           >
 
             {receipt.items.map(
-              (item: any) => (
+              (
+                item: any,
+                index: number
+              ) => (
 
                 <div
-                  key={item.id}
+                  key={`${item.name}-${index}`}
                   className="
                     flex
                     justify-between
@@ -278,38 +281,132 @@ export default function ReceiptModal({
 
           </div>
 
-          {/* Total */}
+          {/* Totals */}
 
-          <div
-            className="
-              flex
-              justify-between
-              items-center
-            "
-          >
+          <div className="space-y-3">
 
-            <span
+            {/* Subtotal */}
+
+            <div
               className="
-                text-lg
-                font-medium
-              "
-            >
-              Total
-            </span>
-
-            <span
-              className="
-                text-2xl
-                font-bold
+                flex
+                justify-between
+                items-center
               "
             >
 
-              ₱
-              {Number(
-                receipt.totalAmount
-              ).toFixed(2)}
+              <span
+                className="
+                  text-zinc-500
+                "
+              >
+                Subtotal
+              </span>
 
-            </span>
+              <span className="font-medium">
+
+                ₱
+                {(
+                  receipt.items.reduce(
+                    (
+                      sum: number,
+                      item: any
+                    ) =>
+
+                      sum +
+
+                      (
+                        Number(
+                          item.selling_price
+                        ) *
+
+                        item.quantity
+                      ),
+
+                    0
+                  )
+                ).toFixed(2)}
+
+              </span>
+
+            </div>
+
+            {/* Discount */}
+
+            {receipt.discountAmount > 0 && (
+
+              <div
+                className="
+                  flex
+                  justify-between
+                  items-center
+                "
+              >
+
+                <span
+                  className="
+                    text-zinc-500
+                  "
+                >
+                  Discount
+                </span>
+
+                <span
+                  className="
+                    font-medium
+                    text-red-500
+                  "
+                >
+
+                  - ₱
+                  {Number(
+                    receipt.discountAmount
+                  ).toFixed(2)}
+
+                </span>
+
+              </div>
+
+            )}
+
+            {/* Final Total */}
+
+            <div
+              className="
+                flex
+                justify-between
+                items-center
+                pt-3
+                border-t
+                border-zinc-200
+                dark:border-zinc-800
+              "
+            >
+
+              <span
+                className="
+                  text-lg
+                  font-medium
+                "
+              >
+                Total
+              </span>
+
+              <span
+                className="
+                  text-2xl
+                  font-bold
+                "
+              >
+
+                ₱
+                {Number(
+                  receipt.totalAmount
+                ).toFixed(2)}
+
+              </span>
+
+            </div>
 
           </div>
 

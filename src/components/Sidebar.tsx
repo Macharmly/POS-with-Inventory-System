@@ -522,7 +522,7 @@ export default function Sidebar() {
           >
 
             <p>
-              Version 0.1.0
+              Version 0.3.2
             </p>
 
             <p>

@@ -41,8 +41,8 @@ export default function POSPage() {
   const [search, setSearch] =
     useState('');
 
-  const [discountPercent,
-    setDiscountPercent] =
+  const [discountAmountInput,
+    setDiscountAmountInput] =
     useState('');
 
   const [paymentMethod,
@@ -195,16 +195,14 @@ export default function POSPage() {
     0
   );
 
-  const discountValue =
-    Number(discountPercent) || 0;
-
   const discountAmount =
-    cartTotal *
-    (discountValue / 100);
+    Number(discountAmountInput) || 0;
 
   const finalTotal =
-    cartTotal -
-    discountAmount;
+    Math.max(
+      cartTotal - discountAmount,
+      0
+    );
 
   const cashAmount =
     Number(cashReceived) || 0;
@@ -246,6 +244,9 @@ export default function POSPage() {
           total_amount:
             finalTotal,
 
+          discount_amount:
+            discountAmount,
+
           payment_method:
             paymentMethod
 
@@ -261,7 +262,7 @@ export default function POSPage() {
 
       setCart([]);
 
-      setDiscountPercent('');
+      setDiscountAmountInput('');
 
       setCashReceived('');
 
@@ -799,14 +800,14 @@ export default function POSPage() {
                 dark:text-zinc-300
               "
             >
-              Discount (%)
+              Discount Amount (₱)
             </label>
 
             <input
               type="number"
               min={0}
-              max={100}
-              value={discountPercent}
+              max={cartTotal}
+              value={discountAmountInput}
               onChange={(e) => {
 
                 const value =
@@ -814,7 +815,7 @@ export default function POSPage() {
 
                 if (value === '') {
 
-                  setDiscountPercent('');
+                  setDiscountAmountInput('');
 
                   return;
 
@@ -825,14 +826,15 @@ export default function POSPage() {
 
                 if (
                   numericValue >= 0 &&
-                  numericValue <= 100
+                  numericValue <= cartTotal
                 ) {
 
-                  setDiscountPercent(value);
+                  setDiscountAmountInput(value);
 
                 }
 
               }}
+              placeholder="Enter discount amount"
               className="
                 w-full
                 bg-white
@@ -1319,10 +1321,7 @@ export default function POSPage() {
 
               <input
                 type="text"
-                placeholder="
-                  Search by product,
-                  SKU, or category...
-                "
+                placeholder="Search by product, SKU, or category..."
                 value={search}
                 onChange={(e) =>
                   setSearch(

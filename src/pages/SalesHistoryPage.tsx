@@ -116,6 +116,9 @@ export default function SalesHistoryPage() {
         totalAmount:
           data.sale.total_amount,
 
+        discountAmount:
+          data.sale.discount_amount || 0,
+
         paymentMethod:
           data.sale.payment_method,
 

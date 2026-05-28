@@ -15,6 +15,7 @@ export const checkout = async (
     user_id,
     items,
     total_amount,
+    discount_amount,
     payment_method
   } = req.body;
 
@@ -90,11 +91,12 @@ export const checkout = async (
         user_id,
         invoice_number,
         total_amount,
+        discount_amount,
         payment_method
 
       )
 
-      VALUES (?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?)
 
     `;
 
@@ -108,6 +110,7 @@ export const checkout = async (
           user_id,
           invoiceNumber,
           total_amount,
+          discount_amount,
           payment_method
         ]
 
@@ -282,6 +285,9 @@ export const checkout = async (
         totalAmount:
           total_amount,
 
+        discountAmount:
+          discount_amount || 0,
+
         paymentMethod:
           payment_method,
 
@@ -405,6 +411,7 @@ export const getSaleDetails = async (
         sales.id,
         sales.invoice_number,
         sales.total_amount,
+        sales.discount_amount,
         sales.payment_method,
         sales.created_at,
 
