@@ -248,13 +248,27 @@ export default function POSPage() {
             discountAmount,
 
           payment_method:
-            paymentMethod
+            paymentMethod,
+
+          cash_received:
+            cashAmount,
+
+          change_amount:
+            change
 
         });
 
-      setReceipt(
-        response.receipt
-      );
+      setReceipt({
+
+        ...response.receipt,
+
+        cashReceived:
+          cashAmount,
+
+        change:
+          change
+
+      });
 
       setMessage(
         response.message

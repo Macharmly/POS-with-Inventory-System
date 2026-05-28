@@ -122,6 +122,12 @@ export default function SalesHistoryPage() {
         paymentMethod:
           data.sale.payment_method,
 
+        cashReceived:
+          data.sale.cash_received || 0,
+
+        change:
+          data.sale.change_amount || 0,
+
         createdAt:
           data.sale.created_at,
 

@@ -408,6 +408,79 @@ export default function ReceiptModal({
 
             </div>
 
+            {/* Cash Received */}
+
+            {receipt.paymentMethod === 'cash' && (
+
+              <div
+                className="
+                  flex
+                  justify-between
+                  items-center
+                  pt-2
+                "
+              >
+
+                <span
+                  className="
+                    text-zinc-500
+                  "
+                >
+                  Cash Received
+                </span>
+
+                <span className="font-medium">
+
+                  ₱
+                  {Number(
+                    receipt.cashReceived || 0
+                  ).toFixed(2)}
+
+                </span>
+
+              </div>
+
+            )}
+
+            {/* Change */}
+
+            {receipt.paymentMethod === 'cash' && (
+
+              <div
+                className="
+                  flex
+                  justify-between
+                  items-center
+                  pt-2
+                "
+              >
+
+                <span
+                  className="
+                    text-zinc-500
+                  "
+                >
+                  Change
+                </span>
+
+                <span
+                  className="
+                    font-semibold
+                    text-emerald-500
+                  "
+                >
+
+                  ₱
+                  {Number(
+                    receipt.change || 0
+                  ).toFixed(2)}
+
+                </span>
+
+              </div>
+
+            )}
+
           </div>
 
         </div>

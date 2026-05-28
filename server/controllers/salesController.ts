@@ -18,7 +18,9 @@ export const checkout = async (
     items,
     total_amount,
     discount_amount,
-    payment_method
+    payment_method,
+    cash_received,
+    change_amount
   } = req.body;
 
   // Validation
@@ -94,11 +96,13 @@ export const checkout = async (
         invoice_number,
         total_amount,
         discount_amount,
-        payment_method
+        payment_method,
+        cash_received,
+        change_amount
 
       )
 
-      VALUES (?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 
     `;
 
@@ -113,7 +117,9 @@ export const checkout = async (
           invoiceNumber,
           total_amount,
           discount_amount,
-          payment_method
+          payment_method,
+          cash_received || 0,
+          change_amount || 0
         ]
 
       );
@@ -308,6 +314,12 @@ export const checkout = async (
         paymentMethod:
           payment_method,
 
+        cashReceived:
+          cash_received || 0,
+
+        change:
+          change_amount || 0,
+
         createdAt:
           new Date(),
 
@@ -362,7 +374,10 @@ export const getSalesHistory = async (
         sales.id,
         sales.invoice_number,
         sales.total_amount,
+        sales.discount_amount,
         sales.payment_method,
+        sales.cash_received,
+        sales.change_amount,
         sales.created_at,
 
         users.name AS cashier_name
@@ -430,6 +445,8 @@ export const getSaleDetails = async (
         sales.total_amount,
         sales.discount_amount,
         sales.payment_method,
+        sales.cash_received,
+        sales.change_amount,
         sales.created_at,
 
         users.name AS cashier_name,
