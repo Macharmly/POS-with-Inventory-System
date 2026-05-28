@@ -134,14 +134,20 @@ export default function LoginPage() {
             selectedBusiness!
           )
 
-        login({
+        login(
 
-          ...data.user,
+          {
 
-          selected_business:
-            selectedBusiness
+            ...data.user,
 
-        });
+            selected_business:
+              selectedBusiness
+
+          },
+
+          data.token
+
+        );
 
         navigate('/dashboard');
 

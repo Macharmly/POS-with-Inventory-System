@@ -9,11 +9,16 @@ interface User {
 }
 
 interface AuthState {
+
   user: User | null;
 
-  login: (user: User) => void;
+  login: (
+    user: User,
+    token: string
+  ) => void;
 
   logout: () => void;
+
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -23,12 +28,21 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.getItem('user') || 'null'
   ),
 
-  login: (user) => {
+  login: (
+    user,
+    token
+  ) => {
 
     // Save user
     localStorage.setItem(
       'user',
       JSON.stringify(user)
+    );
+
+    // Save user token
+    localStorage.setItem(
+      'token',
+      token
     );
 
     // Save business ID
@@ -43,8 +57,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: () => {
 
-    // Remove from localStorage
     localStorage.removeItem('user');
+
+    localStorage.removeItem('token');
 
     set({ user: null });
 

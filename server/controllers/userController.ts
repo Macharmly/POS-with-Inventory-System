@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import logActivity from '../utils/logActivity';
 
 import {
   Request,
@@ -118,7 +119,7 @@ export const createUser = async (
         role
       ],
 
-      (err) => {
+      async (err) => {
 
         if (err) {
 
@@ -129,6 +130,21 @@ export const createUser = async (
           });
 
         }
+
+        await logActivity({
+
+          user_id: req.user!.id,
+
+          business_id,
+
+          module: 'User Management',
+
+          action: 'CREATE_USER',
+
+          description:
+            `Created user: ${name}`
+
+        });
 
         res.json({
 
@@ -237,7 +253,7 @@ export const updateUser = async (
 
       values,
 
-      (err) => {
+      async (err) => {
 
         if (err) {
 
@@ -248,6 +264,21 @@ export const updateUser = async (
           });
 
         }
+
+        await logActivity({
+
+          user_id: req.user!.id,
+
+          business_id: req.user!.business_id,
+
+          module: 'User Management',
+
+          action: 'UPDATE_USER',
+
+          description:
+            `Updated user: ${name}`
+
+        });
 
         res.json({
 
@@ -292,7 +323,7 @@ export const deleteUser = (
 
     [id],
 
-    (err) => {
+    async (err) => {
 
       if (err) {
 
@@ -303,6 +334,21 @@ export const deleteUser = (
         });
 
       }
+
+      await logActivity({
+
+        user_id: req.user!.id,
+
+        business_id: req.user!.business_id,
+
+        module: 'User Management',
+
+        action: 'DELETE_USER',
+
+        description:
+          `Deleted user ID: ${id}`
+
+      });
 
       res.json({
 
@@ -385,7 +431,7 @@ export const updateProfile = async (
 
       values,
 
-      (err) => {
+      async (err) => {
 
         if (err) {
 

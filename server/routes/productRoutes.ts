@@ -1,5 +1,8 @@
 import express from 'express';
 
+import authenticateToken
+from '../middleware/authenticateToken';
+
 import {
   getProducts,
   createProduct
@@ -14,6 +17,7 @@ router.get(
 
 router.post(
   '/',
+  authenticateToken,
   createProduct
 );
 

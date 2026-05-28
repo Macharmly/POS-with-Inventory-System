@@ -14,6 +14,7 @@ import {
   Wrench,
   BarChart3,
   Users,
+  ScrollText,
   Moon,
   Sun,
   LogOut
@@ -103,6 +104,14 @@ const navigation = [
     label: 'Users',
     path: '/users',
     icon: Users
+  },
+
+  // Logs
+
+  {
+    label: 'Activity Logs',
+    path: '/logs',
+    icon: ScrollText
   }
 
 ];

@@ -1,9 +1,15 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+
+import authenticateToken, {
+  AuthRequest
+} from '../middleware/authenticateToken';
 
 import connection from '../dbConnection';
 
+import logActivity from '../utils/logActivity';
+
 export const getProducts = (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ) => {
 
@@ -68,8 +74,8 @@ export const getProducts = (
 
 };
 
-export const createProduct = (
-  req: Request,
+export const createProduct = async (
+  req: AuthRequest,
   res: Response
 ) => {
 
@@ -148,6 +154,21 @@ export const createProduct = (
         });
 
       }
+
+      logActivity({
+
+        user_id: req.user!.id,
+
+        business_id,
+
+        module: 'Inventory',
+
+        action: 'CREATE_PRODUCT',
+
+        description:
+          `Created product: ${name}`
+
+      });
 
       return res.status(201).json({
 

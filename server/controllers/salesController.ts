@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import connection from '../dbConnection';
 
+import logActivity from '../utils/logActivity';
+
 /* =========================
    CHECKOUT
 ========================= */
@@ -266,6 +268,21 @@ export const checkout = async (
     }
 
     await db.commit();
+
+    await logActivity({
+
+      user_id,
+
+      business_id,
+
+      module: 'Sales',
+
+      action: 'CREATE_SALE',
+
+      description:
+        `Created sale ${invoiceNumber} worth ₱${total_amount}`
+
+    });
 
     res.status(200).json({
 
@@ -832,6 +849,21 @@ export const restockProduct = async (
 
     await db.commit();
 
+    await logActivity({
+
+      user_id,
+
+      business_id,
+
+      module: 'Inventory',
+
+      action: 'RESTOCK_PRODUCT',
+
+      description:
+        `Restocked product ID ${product_id} with ${quantity} units`
+
+    });
+
     res.status(200).json({
 
       success: true,
@@ -999,6 +1031,21 @@ export const adjustInventory = async (
 
     await db.commit();
 
+    await logActivity({
+
+      user_id,
+
+      business_id,
+
+      module: 'Inventory',
+
+      action: 'ADJUST_INVENTORY',
+
+      description:
+        `Adjusted product ID ${product_id} by ${adjustment_quantity}`
+
+    });
+
     res.status(200).json({
 
       success: true,
@@ -1147,6 +1194,21 @@ export const createService = async (
         ]
 
       );
+
+    await logActivity({
+
+      user_id: req.user!.id,
+
+      business_id,
+
+      module: 'Services',
+
+      action: 'CREATE_SERVICE',
+
+      description:
+        `Created service: ${name}`
+
+    });
 
     res.status(201).json({
 

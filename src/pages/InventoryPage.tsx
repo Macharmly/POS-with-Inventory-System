@@ -126,6 +126,8 @@ export default function InventoryPage() {
 
       setProducts(updatedProducts);
 
+      alert('Product added successfully!');
+
       setShowAddModal(false);
 
       setNewProduct({

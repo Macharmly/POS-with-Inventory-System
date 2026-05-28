@@ -1,14 +1,11 @@
-import axios from 'axios';
-
-const API_URL =
-  'http://localhost:5000/api';
+import api from './api';
 
 export const fetchProducts = async (
   business_id: number
 ) => {
 
-  const response = await axios.get(
-    `${API_URL}/products`,
+  const response = await api.get(
+    '/products',
     {
       params: {
         business_id
@@ -24,8 +21,8 @@ export const createProduct = async (
   productData: any
 ) => {
 
-  const response = await axios.post(
-    `${API_URL}/products`,
+  const response = await api.post(
+    '/products',
     productData
   );
 

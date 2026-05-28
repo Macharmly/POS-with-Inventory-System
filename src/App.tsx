@@ -17,6 +17,7 @@ import ServicesPage from './pages/ServicesPage';
 import ReportsPage from './pages/ReportsPage';
 import SalesReportPage from './pages/SalesReportPage';
 import UserManagementPage from './pages/UserManagementPage';
+import LogsPage from './pages/LogsPage';
 import FinancePage from './pages/FinancePage';
 import LowStockReportPage from './pages/LowStockReportPage';
 import ProfitReportPage from './pages/ProfitReportPage';
@@ -189,6 +190,23 @@ export default function App() {
                 ]}
               >
                 <UserManagementPage />
+              </RoleProtectedRoute>
+
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/logs"
+          element={
+            <ProtectedRoute>
+
+              <RoleProtectedRoute
+                allowedRoles={[
+                  'admin'
+                ]}
+              >
+                <LogsPage />
               </RoleProtectedRoute>
 
             </ProtectedRoute>
