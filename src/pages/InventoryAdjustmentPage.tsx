@@ -310,6 +310,7 @@ export default function InventoryAdjustmentPage() {
                 dark:text-zinc-400
                 mt-2
               ">
+                Note: Strictly use the Up and Down arrows. <br></br>
                 Positive numbers increase stock.
                 Negative numbers reduce stock.
               </p>

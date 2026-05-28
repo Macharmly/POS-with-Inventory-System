@@ -2,7 +2,8 @@ import express from 'express';
 
 import {
   getExpenses,
-  createExpense
+  createExpense,
+  revertExpense
 } from '../controllers/financeController';
 
 const router = express.Router();
@@ -15,6 +16,11 @@ router.get(
 router.post(
   '/expenses',
   createExpense
+);
+
+router.delete(
+  '/:id',
+  revertExpense
 );
 
 export default router;

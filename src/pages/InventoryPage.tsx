@@ -53,6 +53,9 @@ export default function InventoryPage() {
       low_stock_threshold: ''
     });
 
+  const [searchTerm, setSearchTerm] =
+    useState('');
+
   useEffect(() => {
 
     const loadProducts = async () => {
@@ -87,6 +90,31 @@ export default function InventoryPage() {
     }
 
   }, [user]);
+
+  const filteredProducts =
+    products.filter((product) =>
+      product.name
+        .toLowerCase()
+        .includes(
+          searchTerm.toLowerCase()
+        ) ||
+
+      product.sku_barcode
+        .toLowerCase()
+        .includes(
+          searchTerm.toLowerCase()
+        ) ||
+
+      product.category
+        ?.toLowerCase()
+        .includes(
+          searchTerm.toLowerCase()
+        ) ||
+
+      product.id
+        .toString()
+        .includes(searchTerm)
+    );
 
   const handleAddProduct = async (
     e: React.FormEvent
@@ -535,23 +563,56 @@ export default function InventoryPage() {
             border-b
             border-zinc-200
             dark:border-zinc-800
+            flex
+            flex-col
+            md:flex-row
+            md:items-center
+            md:justify-between
+            gap-4
           ">
 
-            <h2 className="
-              text-lg
-              font-semibold
-            ">
-              Product Inventory
-            </h2>
+            <div>
 
-            <p className="
-              text-sm
-              text-zinc-500
-              dark:text-zinc-400
-              mt-1
-            ">
-              View current product pricing and stock availability.
-            </p>
+              <h2 className="
+                text-lg
+                font-semibold
+              ">
+                Product Inventory
+              </h2>
+
+              <p className="
+                text-sm
+                text-zinc-500
+                dark:text-zinc-400
+                mt-1
+              ">
+                View current product pricing and stock availability.
+              </p>
+
+            </div>
+
+            <input
+              type="text"
+              placeholder="Search products, SKU, category, ID..."
+              value={searchTerm}
+              onChange={(e) =>
+                setSearchTerm(
+                  e.target.value
+                )
+              }
+              className="
+                w-full
+                md:w-80
+                border
+                border-zinc-300
+                dark:border-zinc-700
+                rounded-md
+                px-4
+                py-2
+                bg-transparent
+                text-sm
+              "
+            />
 
           </div>
 
@@ -576,7 +637,55 @@ export default function InventoryPage() {
                     text-zinc-500
                     dark:text-zinc-400
                   ">
+                    Item ID
+                  </th>
+
+                  <th className="
+                    px-6
+                    py-4
+                    text-left
+                    text-sm
+                    font-medium
+                    text-zinc-500
+                    dark:text-zinc-400
+                  ">
                     Product Name
+                  </th>
+
+                  <th className="
+                    px-6
+                    py-4
+                    text-left
+                    text-sm
+                    font-medium
+                    text-zinc-500
+                    dark:text-zinc-400
+                  ">
+                    SKU / Barcode
+                  </th>
+
+                  <th className="
+                    px-6
+                    py-4
+                    text-left
+                    text-sm
+                    font-medium
+                    text-zinc-500
+                    dark:text-zinc-400
+                  ">
+                    Category
+                  </th>
+
+                  <th className="
+                    px-6
+                    py-4
+                    text-left
+                    text-sm
+                    font-medium
+                    text-zinc-500
+                    dark:text-zinc-400
+                  ">
+                    Cost Price
                   </th>
 
                   <th className="
@@ -621,12 +730,12 @@ export default function InventoryPage() {
 
               <tbody>
 
-                {products.length === 0 ? (
+                {filteredProducts.length === 0 ? (
 
                   <tr>
 
                     <td
-                      colSpan={4}
+                      colSpan={8}
                       className="
                         px-6
                         py-12
@@ -642,7 +751,8 @@ export default function InventoryPage() {
 
                 ) : (
 
-                  products.map((product) => (
+                  filteredProducts.map(
+                    (product) => (
 
                     <tr
                       key={product.id}
@@ -661,7 +771,39 @@ export default function InventoryPage() {
                         py-4
                         font-medium
                       ">
+                        #{product.id}
+                      </td>
+
+                      <td className="
+                        px-6
+                        py-4
+                        font-medium
+                      ">
                         {product.name}
+                      </td>
+
+                      <td className="
+                        px-6
+                        py-4
+                      ">
+                        {product.sku_barcode}
+                      </td>
+
+                      <td className="
+                        px-6
+                        py-4
+                      ">
+                        {product.category || 'N/A'}
+                      </td>
+
+                      <td className="
+                        px-6
+                        py-4
+                      ">
+                        ₱
+                        {Number(
+                          product.cost_price
+                        ).toFixed(2)}
                       </td>
 
                       <td className="

@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 
 import db from '../dbConnection';
 
+import logActivity from '../utils/logActivity';
+
 /* =========================
    Get Expenses
 ========================= */
@@ -92,7 +94,7 @@ export const getExpenses =
 ========================= */
 
 export const createExpense =
-  (
+  async (
     req: Request,
     res: Response
   ) => {
@@ -136,7 +138,7 @@ export const createExpense =
 
       ],
 
-      (
+      async (
         error: any
       ) => {
 
@@ -153,12 +155,136 @@ export const createExpense =
 
         }
 
+        await logActivity({
+
+          user_id,
+
+          business_id,
+
+          module: 'Finance',
+
+          action:
+            'CREATE_EXPENSE',
+
+          description:
+            `Added expense: ${title} (₱${Number(amount).toFixed(2)})`
+
+        });
+
         res.json({
 
           message:
             'Expense added successfully.'
 
         });
+
+      }
+
+    );
+
+  };
+
+/* =========================
+   Revert Expense
+========================= */
+
+export const revertExpense =
+  (
+    req: Request,
+    res: Response
+  ) => {
+
+    const { id } = req.params;
+
+    db.query(
+
+      `
+        SELECT *
+        FROM expenses
+        WHERE id = ?
+      `,
+
+      [id],
+
+      (
+        fetchError: any,
+        results: any
+      ) => {
+
+        if (
+          fetchError ||
+          results.length === 0
+        ) {
+
+          return res.status(500).json({
+
+            error:
+              'Expense not found.'
+
+          });
+
+        }
+
+        const expense =
+          results[0];
+
+        db.query(
+
+          `
+            DELETE FROM expenses
+            WHERE id = ?
+          `,
+
+          [id],
+
+          async (
+            deleteError: any
+          ) => {
+
+            if (deleteError) {
+
+              console.error(
+                deleteError
+              );
+
+              return res.status(500).json({
+
+                error:
+                  'Failed to revert expense.'
+
+              });
+
+            }
+
+            await logActivity({
+
+              user_id:
+                expense.user_id,
+
+              business_id:
+                expense.business_id,
+
+              module:
+                'Finance',
+
+              action:
+                'REVERT_EXPENSE',
+
+              description:
+                `Reverted expense: ${expense.title} (₱${Number(expense.amount).toFixed(2)})`
+
+            });
+
+            res.json({
+
+              message:
+                'Expense reverted successfully.'
+
+            });
+
+          }
+
+        );
 
       }
 

@@ -265,6 +265,50 @@ export default function FinancePage() {
 
         );
 
+  const handleRevertExpense =
+  async (
+    expenseId: number
+  ) => {
+
+    const confirmRevert =
+      window.confirm(
+        'Are you sure you want to revert this expense?'
+      );
+
+    if (!confirmRevert) {
+      return;
+    }
+
+    try {
+
+      await fetch(
+
+        `http://localhost:5000/api/finance/${expenseId}`,
+
+        {
+          method: 'DELETE'
+        }
+
+      );
+
+      setMessage(
+        'Expense reverted successfully.'
+      );
+
+      loadExpenses();
+
+    } catch (error) {
+
+      console.error(error);
+
+      setMessage(
+        'Failed to revert expense.'
+      );
+
+    }
+
+  };
+
   return (
 
     <AppLayout>
@@ -760,6 +804,16 @@ export default function FinancePage() {
                       Added By
                     </th>
 
+                    <th className="
+                      text-left
+                      px-6
+                      py-3
+                      text-sm
+                      font-medium
+                    ">
+                      Action
+                    </th>
+
                   </tr>
 
                 </thead>
@@ -877,6 +931,33 @@ export default function FinancePage() {
                       ">
                         {expense.name}
                       </td>
+
+                      <td className="
+                      px-6
+                      py-4
+                      text-sm
+                    ">
+
+                      <button
+                        onClick={() =>
+                          handleRevertExpense(expense.id)
+                        }
+                        className="
+                          bg-red-500
+                          hover:bg-red-600
+                          text-white
+                          px-3
+                          py-1.5
+                          rounded-md
+                          text-xs
+                          font-medium
+                          transition
+                        "
+                      >
+                        Revert
+                      </button>
+
+                    </td>
 
                     </tr>
 
