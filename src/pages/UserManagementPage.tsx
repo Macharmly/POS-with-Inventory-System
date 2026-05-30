@@ -267,7 +267,7 @@ export default function UserManagementPage() {
               value={name}
               onChange={(e) =>
                 setName(
-                  e.target.value
+                  e.target.value.toUpperCase()
                 )
               }
               className="
@@ -534,11 +534,25 @@ export default function UserManagementPage() {
                         onClick={() =>
                           handleEdit(user)
                         }
-                        className="
-                          text-blue-600
+                        disabled={
+                          user.role === 'admin' &&
+                          currentUser?.id !== user.id
+                        }
+                        className={`
                           text-sm
                           font-medium
-                        "
+                          ${
+                            user.role === 'admin' &&
+                            currentUser?.id !== user.id
+                              ? `
+                                text-zinc-400
+                                cursor-not-allowed
+                              `
+                              : `
+                                text-blue-600
+                              `
+                          }
+                        `}
                       >
                         Edit
                       </button>
@@ -547,11 +561,23 @@ export default function UserManagementPage() {
                         onClick={() =>
                           handleDelete(user.id)
                         }
-                        className="
-                          text-red-600
+                        disabled={
+                          currentUser?.id === user.id
+                        }
+                        className={`
                           text-sm
                           font-medium
-                        "
+                          ${
+                            currentUser?.id === user.id
+                              ? `
+                                text-zinc-400
+                                cursor-not-allowed
+                              `
+                              : `
+                                text-red-600
+                              `
+                          }
+                        `}
                       >
                         Delete
                       </button>

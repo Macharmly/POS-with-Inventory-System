@@ -3,12 +3,32 @@ import axios from 'axios';
 const API_URL =
   'http://localhost:5000/api/users';
 
+const getAuthConfig = () => {
+
+  const token =
+    localStorage.getItem('token');
+
+  return {
+
+    headers: {
+      Authorization:
+        `Bearer ${token}`
+    }
+
+  };
+
+};
+
 export const fetchUsers = async () => {
 
   const response =
-    await axios.get(API_URL);
+    await axios.get(
+      API_URL,
+      getAuthConfig()
+    );
 
   return response.data;
+
 };
 
 export const createUser = async (
@@ -18,10 +38,12 @@ export const createUser = async (
   const response =
     await axios.post(
       API_URL,
-      userData
+      userData,
+      getAuthConfig()
     );
 
   return response.data;
+
 };
 
 export const updateUser = async (
@@ -32,10 +54,12 @@ export const updateUser = async (
   const response =
     await axios.put(
       `${API_URL}/${id}`,
-      userData
+      userData,
+      getAuthConfig()
     );
 
   return response.data;
+
 };
 
 export const deleteUser = async (
@@ -44,8 +68,10 @@ export const deleteUser = async (
 
   const response =
     await axios.delete(
-      `${API_URL}/${id}`
+      `${API_URL}/${id}`,
+      getAuthConfig()
     );
 
   return response.data;
+
 };

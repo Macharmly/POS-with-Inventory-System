@@ -1,10 +1,11 @@
 import bcrypt from 'bcrypt';
 import logActivity from '../utils/logActivity';
 
+import { Response } from 'express';
+
 import {
-  Request,
-  Response
-} from 'express';
+  AuthRequest
+} from '../middleware/authenticateToken';
 
 import connection from '../dbConnection';
 
@@ -13,7 +14,7 @@ import connection from '../dbConnection';
 ========================= */
 
 export const getUsers = (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ) => {
 
@@ -55,7 +56,7 @@ export const getUsers = (
 ========================= */
 
 export const createUser = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ) => {
 
@@ -174,7 +175,7 @@ export const createUser = async (
 ========================= */
 
 export const updateUser = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ) => {
 
@@ -308,7 +309,7 @@ export const updateUser = async (
 ========================= */
 
 export const deleteUser = (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ) => {
 
@@ -368,7 +369,7 @@ export const deleteUser = (
 ========================= */
 
 export const updateProfile = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ) => {
 
