@@ -131,6 +131,61 @@ export const checkout = async (
 
     for (const item of items) {
 
+      const itemType =
+        item.item_type || 'product';
+
+      if (
+        itemType === 'service'
+      ) {
+
+        await db.query(
+
+          `
+            INSERT INTO sale_items (
+
+              sale_id,
+              product_id,
+              service_id,
+              product_name,
+              quantity,
+              subtotal,
+              price_at_sale,
+              item_type
+
+            )
+
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+
+          `,
+
+          [
+
+            saleId,
+
+            null,
+
+            item.id,
+
+            item.name,
+
+            item.quantity,
+
+            Number(
+              item.service_price
+            ) * item.quantity,
+
+            item.service_price,
+
+            'service'
+
+          ]
+
+        );
+
+        continue;
+
+      }
+
       // Verify Product
 
       const [productRows]: any =
@@ -191,11 +246,12 @@ export const checkout = async (
           product_name,
           quantity,
           subtotal,
-          price_at_sale
+          price_at_sale,
+          item_type
 
         )
 
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
 
       `;
 
@@ -210,7 +266,8 @@ export const checkout = async (
           item.quantity,
           Number(item.selling_price) *
             item.quantity,
-          item.selling_price
+          item.selling_price,
+          'product'
         ]
 
       );
@@ -487,15 +544,15 @@ export const getSaleDetails = async (
 
       SELECT
 
+        sale_items.id,
+        sale_items.item_type,
+
         sale_items.quantity,
         sale_items.price_at_sale,
 
-        products.name
+        sale_items.product_name AS name
 
       FROM sale_items
-
-      INNER JOIN products
-        ON sale_items.product_id = products.id
 
       WHERE sale_items.sale_id = ?
 
@@ -1102,36 +1159,54 @@ export const getServices = async (
   res: Response
 ) => {
 
-  const { business_id } =
-    req.query;
+  const { business_id } = req.query;
 
   try {
 
-    const sql = `
-
-      SELECT *
-
-      FROM services
-
-      WHERE business_id = ?
-
-      ORDER BY created_at DESC
-
-    `;
-
-    const [results] =
+    const [services]: any =
       await connection
         .promise()
         .query(
-
-          sql,
-
+          `
+          SELECT *
+          FROM services
+          WHERE business_id = ?
+          ORDER BY created_at DESC
+          `,
           [business_id]
-
         );
 
+    for (const service of services) {
+
+      const [products]: any =
+        await connection
+          .promise()
+          .query(
+            `
+            SELECT
+
+              p.id,
+              p.name,
+              p.selling_price,
+              p.stock_quantity
+
+            FROM service_products sp
+
+            INNER JOIN products p
+              ON sp.product_id = p.id
+
+            WHERE sp.service_id = ?
+            `,
+            [service.id]
+          );
+
+      service.linked_products =
+        products || [];
+
+    }
+
     res.status(200).json(
-      results
+      services
     );
 
   } catch (error: any) {
@@ -1214,7 +1289,7 @@ export const createService = async (
 
     await logActivity({
 
-      user_id: req.user!.id,
+      user_id: req.body.user_id,
 
       business_id,
 
@@ -1248,6 +1323,485 @@ export const createService = async (
     });
 
   }
+
+};
+
+/* =========================
+   UPDATE SERVICE
+========================= */
+
+export const updateService = async (
+  req: Request,
+  res: Response
+) => {
+
+  const { id } = req.params;
+
+  const {
+    name,
+    description,
+    service_price,
+    user_id,
+    business_id
+  } = req.body;
+
+  if (
+    !name ||
+    !service_price
+  ) {
+
+    return res.status(400).json({
+      error: 'Missing required fields'
+    });
+
+  }
+
+  try {
+
+    const sql = `
+
+      UPDATE services
+
+      SET
+        name = ?,
+        description = ?,
+        service_price = ?
+
+      WHERE id = ?
+
+    `;
+
+    const [result]: any =
+      await connection
+        .promise()
+        .query(
+          sql,
+          [
+            name,
+            description,
+            service_price,
+            id
+          ]
+        );
+
+    if (
+      result.affectedRows === 0
+    ) {
+
+      return res.status(404).json({
+        error: 'Service not found'
+      });
+
+    }
+
+    await logActivity({
+
+      user_id,
+
+      business_id,
+
+      module: 'Services',
+
+      action: 'UPDATE_SERVICE',
+
+      description:
+        `Updated service: ${name}`
+
+    });
+
+    res.status(200).json({
+
+      success: true,
+
+      message:
+        'Service updated successfully'
+
+    });
+
+  } catch (error: any) {
+
+    console.error(
+      '❌ Service Update Error:',
+      error.message
+    );
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+};
+
+/* =========================
+   DELETE SERVICE
+========================= */
+
+export const deleteService = async (
+  req: Request,
+  res: Response
+) => {
+
+  const { id } = req.params;
+
+  try {
+
+    const [serviceRows]: any =
+      await connection
+        .promise()
+        .query(
+
+          `
+          SELECT *
+          FROM services
+          WHERE id = ?
+          `,
+
+          [id]
+
+        );
+
+    if (
+      serviceRows.length === 0
+    ) {
+
+      return res.status(404).json({
+        error: 'Service not found'
+      });
+
+    }
+
+    const service =
+      serviceRows[0];
+
+    const sql = `
+
+      DELETE FROM services
+
+      WHERE id = ?
+
+    `;
+
+    const [result]: any =
+      await connection
+        .promise()
+        .query(
+          sql,
+          [id]
+        );
+
+    if (
+      result.affectedRows === 0
+    ) {
+
+      return res.status(404).json({
+        error: 'Service not found'
+      });
+
+    }
+
+    await logActivity({
+
+      user_id:
+        req.body.user_id,
+
+      business_id:
+        service.business_id,
+
+      module: 'Services',
+
+      action:
+        'DELETE_SERVICE',
+
+      description:
+        `Deleted service: ${service.name}`
+
+    });
+
+    res.status(200).json({
+
+      success: true,
+
+      message:
+        'Service deleted successfully'
+
+    });
+
+  } catch (error: any) {
+
+    console.error(
+      '❌ Service Delete Error:',
+      error.message
+    );
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+};
+
+/* =========================
+   PRODUCT and SERVICE MAPPING
+========================= */
+
+export const getServiceProducts =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+
+    const { id } =
+      req.params;
+
+    try {
+
+      const [rows] =
+        await connection
+          .promise()
+          .query(
+
+        `
+        SELECT
+
+          p.*
+
+        FROM service_products sp
+
+        INNER JOIN products p
+          ON sp.product_id = p.id
+
+        WHERE sp.service_id = ?
+        `,
+
+        [id]
+
+      );
+
+      res.json(rows);
+
+    } catch (error: any) {
+
+      res.status(500).json({
+        error: error.message
+      });
+
+    }
+
+};
+
+/* =========================
+   ADD PRODUCT and SERVICE MAPPING
+========================= */
+
+export const addServiceProduct =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+
+    const { id } =
+      req.params;
+
+    const {
+      product_id,
+      user_id
+    } = req.body;
+
+    try {
+
+      await connection
+        .promise()
+        .query(
+
+          `
+          INSERT INTO service_products (
+
+            service_id,
+            product_id
+
+          )
+
+          VALUES (?, ?)
+          `,
+
+          [
+            id,
+            product_id
+          ]
+
+        );
+
+      const [serviceRows]: any =
+        await connection
+          .promise()
+          .query(
+
+            `
+            SELECT
+              name,
+              business_id
+            FROM services
+            WHERE id = ?
+            `,
+
+            [id]
+
+          );
+
+      const [productRows]: any =
+        await connection
+          .promise()
+          .query(
+
+            `
+            SELECT
+              name
+            FROM products
+            WHERE id = ?
+            `,
+
+            [product_id]
+
+          );
+
+      await logActivity({
+
+        user_id,
+
+        business_id:
+          serviceRows[0]
+            .business_id,
+
+        module:
+          'Services',
+
+        action:
+          'LINK_PRODUCT_TO_SERVICE',
+
+        description:
+          `Linked product "${productRows[0].name}" to service "${serviceRows[0].name}"`
+
+      });
+
+      res.json({
+
+        success: true
+
+      });
+
+    } catch (error: any) {
+
+      res.status(500).json({
+        error: error.message
+      });
+
+    }
+
+};
+
+/* =========================
+   DELETE PRODUCT and SERVICE MAPPING
+========================= */
+
+export const removeServiceProduct =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+
+    const {
+      serviceId,
+      productId
+    } = req.params;
+
+    try {
+
+      const [serviceRows]: any =
+        await connection
+          .promise()
+          .query(
+
+            `
+            SELECT
+              name,
+              business_id
+            FROM services
+            WHERE id = ?
+            `,
+
+            [serviceId]
+
+          );
+
+      const [productRows]: any =
+        await connection
+          .promise()
+          .query(
+
+            `
+            SELECT
+              name
+            FROM products
+            WHERE id = ?
+            `,
+
+            [productId]
+
+          );
+
+      await connection
+        .promise()
+        .query(
+
+          `
+          DELETE FROM service_products
+
+          WHERE service_id = ?
+          AND product_id = ?
+          `,
+
+          [
+            serviceId,
+            productId
+          ]
+
+        );
+
+      await logActivity({
+
+        user_id:
+          req.body.user_id,
+
+        business_id:
+          serviceRows[0]
+            .business_id,
+
+        module:
+          'Services',
+
+        action:
+          'UNLINK_PRODUCT_FROM_SERVICE',
+
+        description:
+          `Removed product "${productRows[0].name}" from service "${serviceRows[0].name}"`
+
+      });
+
+      res.json({
+
+        success: true
+
+      });
+
+    } catch (error: any) {
+
+      res.status(500).json({
+        error: error.message
+      });
+
+    }
 
 };
 

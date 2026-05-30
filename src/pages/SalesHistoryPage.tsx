@@ -144,8 +144,18 @@ export default function SalesHistoryPage() {
               quantity:
                 item.quantity,
 
+              item_type:
+                item.item_type,
+
               selling_price:
-                item.price_at_sale
+                item.item_type === 'product'
+                  ? item.price_at_sale
+                  : undefined,
+
+              service_price:
+                item.item_type === 'service'
+                  ? item.price_at_sale
+                  : undefined
 
             })
           )

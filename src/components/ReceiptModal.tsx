@@ -43,11 +43,15 @@ export default function ReceiptModal({
         className="
           w-full
           max-w-md
+          h-auto
+          max-h-[90vh]
           bg-white
           dark:bg-zinc-900
           rounded-3xl
           shadow-2xl
           overflow-hidden
+          flex
+          flex-col
         "
       >
 
@@ -116,9 +120,13 @@ export default function ReceiptModal({
         <div
           id="receipt-print"
           className="
-            px-6
-            py-6
+            px-4
+            sm:px-6
+            py-4
+            sm:py-6
             space-y-6
+            overflow-y-auto
+            flex-1
           "
         >
 
@@ -209,6 +217,8 @@ export default function ReceiptModal({
               dark:border-zinc-800
               py-4
               space-y-4
+              max-h-[30vh]
+              overflow-y-auto
             "
           >
 
@@ -230,9 +240,17 @@ export default function ReceiptModal({
                   <div>
 
                     <p className="font-medium">
-
                       {item.name}
 
+                      {item.item_type === 'service' && (
+                        <span className="
+                          ml-2
+                          text-xs
+                          text-blue-500
+                        ">
+                          (Service)
+                        </span>
+                      )}
                     </p>
 
                     <p
@@ -246,7 +264,13 @@ export default function ReceiptModal({
 
                       ₱
                       {Number(
-                        item.selling_price
+
+                        item.item_type === 'service'
+
+                          ? item.service_price
+
+                          : item.selling_price
+
                       ).toFixed(2)}
 
                       {' '}×{' '}
@@ -267,9 +291,17 @@ export default function ReceiptModal({
                     ₱
                     {(
                       Number(
-                        item.selling_price
+
+                        item.item_type === 'service'
+
+                          ? item.service_price
+
+                          : item.selling_price
+
                       ) *
+
                       item.quantity
+
                     ).toFixed(2)}
 
                   </span>
@@ -317,7 +349,13 @@ export default function ReceiptModal({
 
                       (
                         Number(
-                          item.selling_price
+
+                          item.item_type === 'service'
+
+                            ? item.service_price
+
+                            : item.selling_price
+
                         ) *
 
                         item.quantity

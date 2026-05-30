@@ -9,9 +9,19 @@ import AppLayout from '../components/AppLayout';
 
 import { useAuthStore } from '../store/authStore';
 
-import { Product, CartItem } from '../types/product';
+import {
+  Product,
+  Service,
+  CartItem
+}
+from '../types/product';
 
 import { fetchProducts } from '../services/productService';
+
+import {
+  fetchServices
+}
+from '../services/serviceService';
 
 import { checkoutSale } from '../services/salesService';
 
@@ -25,6 +35,12 @@ export default function POSPage() {
 
   const [products, setProducts] =
     useState<Product[]>([]);
+
+  const [checkingOut, setCheckingOut] =
+    useState(false);
+
+  const [services, setServices] =
+    useState<Service[]>([]);
 
   const [cart, setCart] =
     useState<CartItem[]>([]);
@@ -63,6 +79,14 @@ export default function POSPage() {
 
       loadProducts();
 
+      if (
+        user.business_id === 2
+      ) {
+
+        loadServices();
+
+      }
+
     }
 
   }, [user]);
@@ -86,6 +110,30 @@ export default function POSPage() {
       setLoading(false);
 
     }
+  };
+
+  const loadServices = async () => {
+
+    try {
+
+      const data =
+        await fetchServices(
+          Number(
+            user?.business_id
+          )
+        );
+
+      setServices(data);
+
+    } catch (error) {
+
+      console.error(
+        'Failed to load services',
+        error
+      );
+
+    }
+
   };
 
   // Search Filter
@@ -164,7 +212,8 @@ export default function POSPage() {
       return [
         {
           ...product,
-          quantity: 1
+          quantity: 1,
+          item_type: 'product'
         },
         ...prevCart
       ];
@@ -173,13 +222,79 @@ export default function POSPage() {
 
   };
 
+  const addServiceToCart = (
+    service: Service
+  ) => {
+
+    setCart((prevCart) => {
+
+      const existing =
+        prevCart.find(
+
+          (item) =>
+
+            item.id === service.id &&
+
+            item.item_type ===
+            'service'
+
+        );
+
+      if (existing) {
+
+        return prevCart.map(
+          (item) =>
+
+            item.id === service.id &&
+            item.item_type ===
+              'service'
+
+              ? {
+                  ...item,
+                  quantity:
+                    item.quantity + 1
+                }
+
+              : item
+        );
+
+      }
+
+      return [
+
+        {
+          id: service.id,
+
+          name: service.name,
+
+          quantity: 1,
+
+          item_type:
+            'service',
+
+          service_price:
+            service.service_price
+        },
+
+        ...prevCart
+
+      ];
+
+    });
+
+  };
+
   const removeFromCart = (
-    id: number
+    id: number,
+    itemType: string
   ) => {
 
     setCart((prevCart) =>
       prevCart.filter(
-        (item) => item.id !== id
+        (item) => !(
+          item.id === id &&
+          item.item_type === itemType
+        )
       )
     );
 
@@ -188,11 +303,25 @@ export default function POSPage() {
   // Totals
 
   const cartTotal = cart.reduce(
+
     (sum, item) =>
+
       sum +
-      Number(item.selling_price) *
+
+      Number(
+
+        item.item_type === 'service'
+
+          ? item.service_price
+
+          : item.selling_price
+
+      ) *
+
       item.quantity,
+
     0
+
   );
 
   const discountAmount =
@@ -212,6 +341,14 @@ export default function POSPage() {
 
   const handleCheckout = async () => {
 
+    if (cart.length === 0) {
+
+      alert('Cart is empty.');
+
+      return;
+
+    }
+
     if (!user) return;
 
     if (
@@ -228,6 +365,8 @@ export default function POSPage() {
     }
 
     try {
+
+      setCheckingOut(true);
 
       const response =
         await checkoutSale({
@@ -286,12 +425,22 @@ export default function POSPage() {
 
       loadProducts();
 
+      if (user.business_id === 2) {
+
+        loadServices();
+
+      }
+
     } catch (err: any) {
 
       setMessage(
         err.response?.data?.error ||
         'Checkout failed.'
       );
+
+    } finally {
+
+      setCheckingOut(false);
 
     }
   };
@@ -470,14 +619,40 @@ export default function POSPage() {
 
               <div className="min-w-0">
 
-                <p
-                  className="
-                    font-medium
-                    truncate
-                  "
-                >
-                  {item.name}
-                </p>
+                <div className="flex items-center gap-2">
+
+                  <span
+                    className={`
+                      text-[10px]
+                      px-2
+                      py-1
+                      rounded-full
+                      font-semibold
+
+                      ${
+                        item.item_type === 'service'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                      }
+                    `}
+                  >
+
+                    {item.item_type === 'service'
+                      ? 'SERVICE'
+                      : 'PRODUCT'}
+
+                  </span>
+
+                  <p
+                    className="
+                      font-medium
+                      truncate
+                    "
+                  >
+                    {item.name}
+                  </p>
+
+                </div>
 
                 <p
                   className="
@@ -489,9 +664,17 @@ export default function POSPage() {
                 >
                   ₱
                   {Number(
-                    item.selling_price
+
+                    item.item_type === 'service'
+
+                      ? item.service_price
+
+                      : item.selling_price
+
                   ).toFixed(2)}
+
                   {' '}×{' '}
+
                   {item.quantity}
                 </p>
 
@@ -500,7 +683,8 @@ export default function POSPage() {
               <button
                 onClick={() =>
                   removeFromCart(
-                    item.id
+                    item.id,
+                    item.item_type
                   )
                 }
                 className="
@@ -546,7 +730,12 @@ export default function POSPage() {
                         .map((cartItem) => {
 
                           if (
-                            cartItem.id === item.id
+
+                            cartItem.id === item.id &&
+
+                            cartItem.item_type ===
+                            item.item_type
+
                           ) {
 
                             return {
@@ -602,8 +791,13 @@ export default function POSPage() {
                   onClick={() => {
 
                     if (
-                      item.quantity >=
-                      item.stock_quantity
+
+                      item.item_type === 'product' &&
+
+                      item.stock_quantity !== undefined &&
+
+                      item.quantity >= item.stock_quantity
+
                     ) {
 
                       alert(
@@ -618,7 +812,8 @@ export default function POSPage() {
                       prevCart.map(
                         (cartItem) =>
 
-                          cartItem.id === item.id
+                          cartItem.id === item.id &&
+                          cartItem.item_type === item.item_type
 
                             ? {
                                 ...cartItem,
@@ -662,9 +857,17 @@ export default function POSPage() {
                 ₱
                 {(
                   Number(
-                    item.selling_price
+
+                    item.item_type === 'service'
+
+                      ? item.service_price
+
+                      : item.selling_price
+
                   ) *
+
                   item.quantity
+
                 ).toFixed(2)}
 
               </span>
@@ -1019,6 +1222,7 @@ export default function POSPage() {
 
           <button
             onClick={handleCheckout}
+            disabled={checkingOut}
             className="
               w-full
               bg-zinc-900
@@ -1033,7 +1237,9 @@ export default function POSPage() {
               hover:opacity-90
             "
           >
-            Complete Sale
+            {checkingOut
+              ? 'Processing...'
+              : 'Complete Sale'}
           </button>
 
         </div>
@@ -1146,6 +1352,133 @@ export default function POSPage() {
               />
 
             </div>
+
+            {user?.business_id === 2 &&
+            services.length > 0 && (
+
+              <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+
+                <h2 className="text-lg font-semibold mb-4">
+                  Services
+                </h2>
+
+                <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+
+                  {services.map((service) => (
+
+                    <button
+                      key={service.id}
+                      onClick={() =>
+                        addServiceToCart(
+                          service
+                        )
+                      }
+                      className="
+                        border
+                        border-blue-200
+                        dark:border-blue-900
+                        rounded-2xl
+                        p-4
+                        text-left
+                        transition
+                        hover:bg-blue-50
+                        dark:hover:bg-blue-950/30
+                      "
+                    >
+
+                      <h3 className="font-semibold">
+                        {service.name}
+                      </h3>
+
+                      <p className="
+                        text-sm
+                        text-zinc-500
+                        dark:text-zinc-400
+                        mt-2
+                      ">
+                        {service.description}
+                      </p>
+
+                      <p className="
+                        mt-3
+                        font-semibold
+                        text-blue-600
+                      ">
+                        ₱
+                        {Number(
+                          service.service_price
+                        ).toFixed(2)}
+                      </p>
+
+                      {service.linked_products &&
+                        service.linked_products.length > 0 && (
+
+                        <div className="mt-4">
+
+                          <p className="
+                            text-xs
+                            font-semibold
+                            text-zinc-500
+                            mb-2
+                          ">
+                            Suggested Products
+                          </p>
+
+                          <div className="
+                            flex
+                            flex-wrap
+                            gap-2
+                          ">
+
+                            {service.linked_products
+                              .slice(0, 4)
+                              .map((product) => (
+
+                                <button
+                                  key={product.id}
+
+                                  onClick={(e) => {
+
+                                    e.stopPropagation();
+
+                                    addToCart(
+                                      product
+                                    );
+
+                                  }}
+
+                                  className="
+                                    text-xs
+                                    px-2
+                                    py-1
+                                    rounded-lg
+                                    bg-emerald-100
+                                    text-emerald-700
+                                    hover:bg-emerald-200
+                                  "
+                                >
+
+                                  {product.name}
+
+                                </button>
+
+                            ))}
+
+                          </div>
+
+                        </div>
+
+                      )}
+
+                    </button>
+
+                  ))}
+
+                </div>
+
+              </div>
+
+            )}
 
             {/* Product Grid */}
 

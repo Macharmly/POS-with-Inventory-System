@@ -10,8 +10,13 @@ import {
   adjustInventory,
   getServices,
   createService,
+  updateService,
+  deleteService,
   getSalesReport,
-  getProfitReport
+  getProfitReport,
+  getServiceProducts,
+  addServiceProduct,
+  removeServiceProduct
 } from '../controllers/salesController';
 
 const router = express.Router();
@@ -56,6 +61,31 @@ router.get(
 router.post(
   '/services',
   createService
+);
+
+router.put(
+  '/services/:id',
+  updateService
+);
+
+router.delete(
+  '/services/:id',
+  deleteService
+);
+
+router.get(
+  '/services/:id/products',
+  getServiceProducts
+);
+
+router.post(
+  '/services/:id/products',
+  addServiceProduct
+);
+
+router.delete(
+  '/services/:serviceId/products/:productId',
+  removeServiceProduct
 );
 
 router.get(

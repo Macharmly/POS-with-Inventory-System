@@ -20,9 +20,46 @@ export interface Product {
 
 }
 
-export interface CartItem
-  extends Product {
+export interface Service {
+
+  id: number;
+
+  name: string;
+
+  description: string;
+
+  service_price: number;
+
+  linked_products?: Product[];
+
+}
+
+export interface CartItem {
+
+  id: number;
+
+  name: string;
 
   quantity: number;
+
+  item_type:
+    | 'product'
+    | 'service';
+
+  selling_price?: number;
+
+  service_price?: number;
+
+  stock_quantity?: number;
+
+  business_id?: number;
+
+  sku_barcode?: string;
+
+  category?: string;
+
+  cost_price?: number;
+
+  low_stock_threshold?: number;
 
 }
