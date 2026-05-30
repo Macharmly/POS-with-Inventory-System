@@ -364,6 +364,14 @@ export default function POSPage() {
 
     }
 
+    const confirmed = window.confirm(
+      `Complete this sale?\n\nTotal Amount: ₱${finalTotal.toFixed(2)}`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     try {
 
       setCheckingOut(true);
