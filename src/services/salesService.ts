@@ -244,7 +244,13 @@ export const fetchProfitReport =
 
 export const fetchServiceReport =
   async (
-    business_id: number
+
+    business_id: number,
+
+    startDate?: string,
+
+    endDate?: string
+
   ) => {
 
     const response =
@@ -254,7 +260,13 @@ export const fetchServiceReport =
 
         {
           params: {
-            business_id
+
+            business_id,
+
+            startDate,
+
+            endDate
+
           }
         }
 

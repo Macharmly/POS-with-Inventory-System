@@ -1159,7 +1159,13 @@ export const getServices = async (
   res: Response
 ) => {
 
-  const { business_id } = req.query;
+  const {
+
+    business_id,
+    startDate,
+    endDate
+
+  } = req.query;
 
   try {
 
@@ -2018,12 +2024,19 @@ export const getServiceReport = async (
   res: Response
 ) => {
 
-  const { business_id } =
-    req.query;
+ const {
+    business_id,
+    startDate,
+    endDate
+  } = req.query;
 
   try {
 
-    const [rows]: any =
+    /* =========================
+       SERVICE PERFORMANCE
+    ========================= */
+
+    const [services]: any =
       await connection
         .promise()
         .query(
@@ -2040,7 +2053,17 @@ export const getServiceReport = async (
               AS total_availed,
 
             SUM(si.subtotal)
-              AS total_revenue
+              AS total_revenue,
+
+            ROUND(
+              SUM(si.subtotal)
+              /
+              NULLIF(
+                SUM(si.quantity),
+                0
+              ),
+              2
+            ) AS average_revenue
 
           FROM sale_items si
 
@@ -2053,6 +2076,17 @@ export const getServiceReport = async (
           AND
             s.business_id = ?
 
+          AND (
+
+            ? IS NULL
+
+            OR
+
+            DATE(s.created_at)
+              BETWEEN ? AND ?
+
+          )
+
           GROUP BY
             si.service_id,
             si.product_name
@@ -2061,21 +2095,26 @@ export const getServiceReport = async (
             total_availed DESC
           `,
 
-          [business_id]
+          [
+            business_id,
+            startDate || null,
+            startDate || null,
+            endDate || null
+          ]
 
         );
 
     const totalRevenue =
-      rows.reduce(
+      services.reduce(
 
         (
           sum: number,
-          item: any
+          service: any
         ) =>
 
           sum +
           Number(
-            item.total_revenue
+            service.total_revenue
           ),
 
         0
@@ -2083,21 +2122,117 @@ export const getServiceReport = async (
       );
 
     const totalTransactions =
-      rows.reduce(
+      services.reduce(
 
         (
           sum: number,
-          item: any
+          service: any
         ) =>
 
           sum +
           Number(
-            item.total_availed
+            service.total_availed
           ),
 
         0
 
       );
+
+    const averageRevenue =
+
+      totalTransactions > 0
+
+        ? totalRevenue /
+          totalTransactions
+
+        : 0;
+
+    const topService =
+
+      services.length > 0
+
+        ? services[0]
+
+        : null;
+
+    const topRevenueService =
+
+      services.length > 0
+
+        ? [...services]
+            .sort(
+
+              (
+                a: any,
+                b: any
+              ) =>
+
+                Number(
+                  b.total_revenue
+                ) -
+
+                Number(
+                  a.total_revenue
+                )
+
+            )[0]
+
+        : null;
+
+    /* =========================
+       SERVICE PRODUCTS
+    ========================= */
+
+    const [serviceProducts]: any =
+      await connection
+        .promise()
+        .query(
+
+          `
+          SELECT
+
+            s.id
+              AS service_id,
+
+            s.name
+              AS service_name,
+
+            COALESCE(
+
+              GROUP_CONCAT(
+                p.name
+                SEPARATOR ', '
+              ),
+
+              'No linked products'
+
+            ) AS products
+
+          FROM services s
+
+          LEFT JOIN service_products sp
+            ON s.id = sp.service_id
+
+          LEFT JOIN products p
+            ON sp.product_id = p.id
+
+          WHERE
+            s.business_id = ?
+
+          GROUP BY
+            s.id,
+            s.name
+
+          ORDER BY
+            s.name
+          `,
+
+          [business_id]
+
+        );
+
+    const totalServices =
+      serviceProducts.length;
 
     res.json({
 
@@ -2105,7 +2240,17 @@ export const getServiceReport = async (
 
       totalTransactions,
 
-      services: rows
+      totalServices,
+
+      averageRevenue,
+
+      topService,
+
+      topRevenueService,
+
+      services,
+
+      serviceProducts
 
     });
 
