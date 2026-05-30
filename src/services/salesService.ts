@@ -237,3 +237,29 @@ export const fetchProfitReport =
     return response.data;
 
   };
+
+/* =========================
+   SERVICE REPORT
+========================= */
+
+export const fetchServiceReport =
+  async (
+    business_id: number
+  ) => {
+
+    const response =
+      await axios.get(
+
+        `${API_URL}/reports/services`,
+
+        {
+          params: {
+            business_id
+          }
+        }
+
+      );
+
+    return response.data;
+
+  };

@@ -2008,3 +2008,118 @@ export const getProfitReport =
     }
 
   };
+
+/* =========================
+   SERVICE REPORT
+========================= */
+
+export const getServiceReport = async (
+  req: Request,
+  res: Response
+) => {
+
+  const { business_id } =
+    req.query;
+
+  try {
+
+    const [rows]: any =
+      await connection
+        .promise()
+        .query(
+
+          `
+          SELECT
+
+            si.service_id,
+
+            si.product_name
+              AS service_name,
+
+            SUM(si.quantity)
+              AS total_availed,
+
+            SUM(si.subtotal)
+              AS total_revenue
+
+          FROM sale_items si
+
+          INNER JOIN sales s
+            ON si.sale_id = s.id
+
+          WHERE
+            si.item_type = 'service'
+
+          AND
+            s.business_id = ?
+
+          GROUP BY
+            si.service_id,
+            si.product_name
+
+          ORDER BY
+            total_availed DESC
+          `,
+
+          [business_id]
+
+        );
+
+    const totalRevenue =
+      rows.reduce(
+
+        (
+          sum: number,
+          item: any
+        ) =>
+
+          sum +
+          Number(
+            item.total_revenue
+          ),
+
+        0
+
+      );
+
+    const totalTransactions =
+      rows.reduce(
+
+        (
+          sum: number,
+          item: any
+        ) =>
+
+          sum +
+          Number(
+            item.total_availed
+          ),
+
+        0
+
+      );
+
+    res.json({
+
+      totalRevenue,
+
+      totalTransactions,
+
+      services: rows
+
+    });
+
+  } catch (error: any) {
+
+    console.error(
+      '❌ Service Report Error:',
+      error.message
+    );
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+};

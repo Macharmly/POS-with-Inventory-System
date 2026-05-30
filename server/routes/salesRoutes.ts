@@ -16,7 +16,8 @@ import {
   getProfitReport,
   getServiceProducts,
   addServiceProduct,
-  removeServiceProduct
+  removeServiceProduct,
+  getServiceReport
 } from '../controllers/salesController';
 
 const router = express.Router();
@@ -96,6 +97,11 @@ router.get(
 router.get(
   '/reports/profit/:business_id',
   getProfitReport
+);
+
+router.get(
+  '/reports/services',
+  getServiceReport
 );
 
 export default router;
