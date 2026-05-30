@@ -21,6 +21,10 @@ import {
 } from 'lucide-react';
 
 import {
+  fetchLatestPatchNote
+} from '../services/patchNoteService';
+
+import {
   useAuthStore
 } from '../store/authStore';
 
@@ -31,6 +35,11 @@ import {
 import {
   rolePermissions
 } from '../config/permissions';
+
+import {
+  useState,
+  useEffect
+} from 'react';
 
 const navigation = [
 
@@ -130,6 +139,9 @@ export default function Sidebar() {
     (state) => state.user
   );
 
+  const [latestVersion, setLatestVersion] =
+    useState('--');
+
   const theme = useThemeStore(
     (state) => state.theme
   );
@@ -162,6 +174,39 @@ export default function Sidebar() {
       return allowedRoutes.includes(item.path);
 
     });
+
+    useEffect(() => {
+
+      const loadVersion = async () => {
+
+        try {
+
+          const latestPatch =
+            await fetchLatestPatchNote();
+
+          if (latestPatch?.version) {
+
+            setLatestVersion(
+              latestPatch.version
+            );
+
+          }
+
+        } catch (error) {
+
+          console.error(error);
+
+          setLatestVersion(
+            'Unknown'
+          );
+
+        }
+
+      };
+
+      loadVersion();
+
+    }, []);
 
   return (
 
@@ -531,7 +576,7 @@ export default function Sidebar() {
           >
 
             <p>
-              Version 0.3.2
+              Version {latestVersion}
             </p>
 
             <p>

@@ -4,6 +4,15 @@ import { useNavigate } from 'react-router-dom';
 
 import Calendar from 'react-calendar';
 
+import {
+  Bell,
+  X
+} from 'lucide-react';
+
+import {
+  fetchPatchNotes
+} from '../services/patchNoteService';
+
 import 'react-calendar/dist/Calendar.css';
 
 import AppLayout from '../components/AppLayout';
@@ -32,6 +41,14 @@ interface LowStockProduct {
   selling_price: number;
 }
 
+interface PatchNote {
+  id: number;
+  version: string;
+  title: string;
+  content: string;
+  created_at: string;
+}
+
 export default function DashboardPage() {
 
   const navigate = useNavigate();
@@ -39,6 +56,15 @@ export default function DashboardPage() {
   const user = useAuthStore(
     (state) => state.user
   );
+
+  const [patchNotes, setPatchNotes] =
+    useState<PatchNote[]>([]);
+
+  const [showPatchNotes, setShowPatchNotes] =
+    useState(false);
+
+  const [hasUnreadPatchNotes, setHasUnreadPatchNotes] =
+    useState(false);
 
   const [analytics, setAnalytics] =
     useState({
@@ -101,12 +127,35 @@ export default function DashboardPage() {
 
   useEffect(() => {
 
-    const loadAnalytics = async () => {
+    const loadDashboard = async () => {
 
       try {
 
         if (!user?.business_id) {
           return;
+        }
+
+        const patchData =
+          await fetchPatchNotes();
+
+        setPatchNotes(patchData);
+
+        if (patchData.length > 0) {
+
+          const latestPatchId =
+            patchData[0].id;
+
+          const lastSeen =
+            Number(
+              localStorage.getItem(
+                'last_patch_note_seen'
+              ) || 0
+            );
+
+          setHasUnreadPatchNotes(
+            latestPatchId > lastSeen
+          );
+
         }
 
         const data =
@@ -127,10 +176,7 @@ export default function DashboardPage() {
 
       } catch (error) {
 
-        console.error(
-          'Failed to load dashboard analytics',
-          error
-        );
+        console.error(error);
 
       } finally {
 
@@ -140,7 +186,7 @@ export default function DashboardPage() {
 
     };
 
-    loadAnalytics();
+    loadDashboard();
 
   }, [user]);
 
@@ -259,12 +305,72 @@ export default function DashboardPage() {
             px-5
             py-3
             shadow-sm
-            min-w-[340px]
+            min-w-[420px]
             flex
             items-center
             justify-between
             gap-6
           ">
+
+            {/* Patch Notes Notification */}
+
+            <div className="relative">
+
+              <button
+                onClick={() => {
+
+                  setShowPatchNotes(true);
+
+                  setHasUnreadPatchNotes(false);
+
+                  if (patchNotes.length > 0) {
+
+                    localStorage.setItem(
+                      'last_patch_note_seen',
+                      patchNotes[0].id.toString()
+                    );
+
+                  }
+
+                }}
+                className="
+                  relative
+                  flex
+                  items-center
+                  justify-center
+                  h-11
+                  w-11
+                  rounded-full
+                  border
+                  border-zinc-200
+                  dark:border-zinc-700
+                  hover:bg-zinc-100
+                  dark:hover:bg-zinc-800
+                  transition
+                "
+              >
+
+                <Bell size={20} />
+
+                {hasUnreadPatchNotes && (
+
+                  <span
+                    className="
+                      absolute
+                      top-1
+                      right-1
+                      h-3
+                      w-3
+                      rounded-full
+                      bg-red-500
+                    "
+                  />
+
+                )}
+
+              </button>
+
+            </div>
 
             <div>
 
@@ -1090,6 +1196,227 @@ export default function DashboardPage() {
         </div>
 
       </div>
+
+      {/* Patch Notes Modal */}
+
+      {showPatchNotes && (
+
+        <div
+          className="
+            fixed
+            inset-0
+            z-50
+            flex
+            items-center
+            justify-center
+            bg-black/50
+            backdrop-blur-sm
+          "
+        >
+
+          <div
+            className="
+              bg-white
+              dark:bg-zinc-900
+              rounded-xl
+              shadow-xl
+              w-full
+              max-w-2xl
+              max-h-[80vh]
+              overflow-hidden
+            "
+          >
+
+            {/* Header */}
+
+            <div
+              className="
+                flex
+                items-center
+                justify-between
+                px-6
+                py-4
+                border-b
+                border-zinc-200
+                dark:border-zinc-800
+              "
+            >
+
+              <div>
+
+                <h2 className="text-xl font-semibold">
+                  Patch Notes
+                </h2>
+
+                <p className="
+                  text-sm
+                  text-zinc-500
+                  dark:text-zinc-400
+                  mt-1
+                ">
+                  Latest system updates and improvements.
+                </p>
+
+              </div>
+
+              <button
+                onClick={() =>
+                  setShowPatchNotes(false)
+                }
+                className="
+                  p-2
+                  rounded-lg
+                  hover:bg-zinc-100
+                  dark:hover:bg-zinc-800
+                  transition
+                "
+              >
+                <X size={20} />
+              </button>
+
+            </div>
+
+            {/* Content */}
+
+            <div
+              className="
+                p-6
+                overflow-y-auto
+                max-h-[65vh]
+                space-y-6
+              "
+            >
+
+              {patchNotes.length === 0 ? (
+
+                <div className="text-center py-10">
+
+                  <p className="
+                    text-zinc-500
+                    dark:text-zinc-400
+                  ">
+                    No patch notes available.
+                  </p>
+
+                </div>
+
+              ) : (
+
+                patchNotes.map((patch) => (
+
+                  <div
+                    key={patch.id}
+                    className="
+                      border
+                      border-zinc-200
+                      dark:border-zinc-800
+                      rounded-lg
+                      p-5
+                    "
+                  >
+
+                    <div className="
+                      flex
+                      items-center
+                      justify-between
+                      gap-4
+                      flex-wrap
+                    ">
+
+                      <span
+                        className="
+                          inline-flex
+                          items-center
+                          px-2.5
+                          py-1
+                          rounded-md
+                          bg-green-100
+                          text-green-700
+                          text-xs
+                          font-semibold
+                        "
+                      >
+                        {patch.version}
+                      </span>
+
+                      <span
+                        className="
+                          text-xs
+                          text-zinc-500
+                          dark:text-zinc-400
+                        "
+                      >
+                        {new Date(
+                          patch.created_at
+                        ).toLocaleString()}
+                      </span>
+
+                    </div>
+
+                    <h3 className="
+                      text-lg
+                      font-semibold
+                      mt-3
+                    ">
+                      {patch.title}
+                    </h3>
+
+                    <ul
+                      className="
+                        mt-3
+                        space-y-2
+                        text-sm
+                        text-zinc-700
+                        dark:text-zinc-300
+                      "
+                    >
+
+                      {patch.content
+                        .split('\n')
+                        .filter(
+                          (line) =>
+                            line.trim() !== ''
+                        )
+                        .map(
+                          (line, index) => (
+
+                            <li
+                              key={index}
+                              className="
+                                flex
+                                items-start
+                                gap-2
+                              "
+                            >
+
+                              <span>
+                                •
+                              </span>
+
+                              <span>
+                                {line}
+                              </span>
+
+                            </li>
+
+                          )
+                        )}
+
+                    </ul>
+
+                  </div>
+
+                ))
+
+              )}
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
 
     </AppLayout>
 

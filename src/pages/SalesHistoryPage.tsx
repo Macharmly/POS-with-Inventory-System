@@ -304,11 +304,7 @@ export default function SalesHistoryPage() {
 
             <input
               type="text"
-              placeholder="
-                Search invoice,
-                cashier,
-                or payment method...
-              "
+              placeholder="Search invoice, cashier, or payment method..."
               value={search}
               onChange={(e) =>
                 setSearch(

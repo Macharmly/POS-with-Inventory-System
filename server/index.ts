@@ -15,6 +15,8 @@ import reportRoutes from './routes/reportRoutes';
 
 import logRoutes from './routes/logRoutes';
 
+import patchNoteRoutes from './routes/patchNoteRoutes';
+
 const app = express();
 
 /* =========================
@@ -76,6 +78,13 @@ app.use(
 app.use(
   '/api',
   reportRoutes
+);
+
+// Patch Routes
+
+app.use(
+  '/api/patch-notes',
+  patchNoteRoutes
 );
 
 /* =========================
