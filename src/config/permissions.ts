@@ -34,7 +34,7 @@ export const rolePermissions = {
 
   ],
 
-  inventory_staff: [
+  inventory: [
 
     '/dashboard',
     '/inventory',

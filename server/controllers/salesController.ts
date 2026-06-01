@@ -419,8 +419,10 @@ export const getSalesHistory = async (
   res: Response
 ) => {
 
-  const { business_id } =
-    req.query;
+  const {
+    business_id,
+    filter
+  } = req.query;
 
   try {
 
@@ -600,12 +602,51 @@ export const getDashboardAnalytics = async (
   res: Response
 ) => {
 
-  const { business_id } =
-    req.query;
+  const {
+    business_id,
+    filter
+  } = req.query;
 
   try {
 
     // Total Sales
+
+    let dateFilter = '';
+
+    if (filter === 'daily') {
+
+      dateFilter =
+        'AND DATE(created_at) = CURDATE()';
+
+    }
+
+    else if (filter === 'weekly') {
+
+      dateFilter =
+        `
+          AND YEARWEEK(
+            created_at,
+            1
+          ) = YEARWEEK(
+            CURDATE(),
+            1
+          )
+        `;
+
+    }
+
+    else if (filter === 'monthly') {
+
+      dateFilter =
+        `
+          AND MONTH(created_at) =
+            MONTH(CURDATE())
+
+          AND YEAR(created_at) =
+            YEAR(CURDATE())
+        `;
+
+    }
 
     const [salesCountRows]: any =
       await connection
@@ -617,6 +658,7 @@ export const getDashboardAnalytics = async (
               COUNT(*) AS totalSales
             FROM sales
             WHERE business_id = ?
+            ${dateFilter}
           `,
 
           [business_id]
@@ -638,6 +680,7 @@ export const getDashboardAnalytics = async (
               ) AS totalRevenue
             FROM sales
             WHERE business_id = ?
+            ${dateFilter}
           `,
 
           [business_id]
@@ -754,8 +797,10 @@ export const getLowStockProducts = async (
   res: Response
 ) => {
 
-  const { business_id } =
-    req.query;
+  const {
+    business_id,
+    filter
+  } = req.query;
 
   try {
 
@@ -1937,8 +1982,10 @@ export const getProfitReport =
 
     try {
 
-      const { business_id } =
-        req.params;
+      const {
+        business_id,
+        filter
+      } = req.query;
 
       const [rows] =
         await connection

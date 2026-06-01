@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 
 import Calendar from 'react-calendar';
 
+import { rolePermissions }
+  from '../config/permissions';
+
 import {
   Bell,
   X
@@ -65,6 +68,67 @@ export default function DashboardPage() {
 
   const [hasUnreadPatchNotes, setHasUnreadPatchNotes] =
     useState(false);
+
+  const [analyticsFilter, setAnalyticsFilter] =
+    useState<
+      'all' |
+      'monthly' |
+      'weekly' |
+      'daily'
+    >('all');
+
+  const quickAccessModules = [
+
+    {
+      title: 'Point of Sale',
+      description:
+        'Handle customer checkout transactions.',
+      route: '/pos'
+    },
+
+    {
+      title: 'Inventory',
+      description:
+        'Manage products and stock levels.',
+      route: '/inventory'
+    },
+
+    {
+      title: 'Sales History',
+      description:
+        'Review completed transactions and invoices.',
+      route: '/sales-history'
+    },
+
+    {
+      title: 'Restock',
+      description:
+        'Add inventory stock and replenish products.',
+      route: '/restock'
+    },
+
+    {
+      title: 'Inventory Adjustment',
+      description:
+        'Correct stock discrepancies and track damages.',
+      route: '/inventory-adjustment'
+    },
+
+    {
+      title: 'Services',
+      description:
+        'Manage MotorShop services and pricing.',
+      route: '/services'
+    },
+
+    {
+      title: 'Reports',
+      description:
+        'Access business reports and analytics.',
+      route: '/reports'
+    }
+
+  ];
 
   const [analytics, setAnalytics] =
     useState({
@@ -160,7 +224,8 @@ export default function DashboardPage() {
 
         const data =
           await fetchDashboardAnalytics(
-            user.business_id
+            user.business_id,
+            analyticsFilter
           );
 
         setAnalytics(data);
@@ -188,7 +253,7 @@ export default function DashboardPage() {
 
     loadDashboard();
 
-  }, [user]);
+  }, [user, analyticsFilter]);
 
   /* =========================
      Real-Time Clock
@@ -257,6 +322,14 @@ export default function DashboardPage() {
     );
 
   }
+
+  const allowedModules =
+    quickAccessModules.filter(
+      (module) =>
+        rolePermissions[
+          user?.role as keyof typeof rolePermissions
+        ]?.includes(module.route)
+    );
 
   return (
 
@@ -427,6 +500,79 @@ export default function DashboardPage() {
 
         </div>
 
+        <div className="flex justify-end">
+
+          <div
+            className="
+              bg-white
+              dark:bg-zinc-900
+              border
+              border-zinc-200
+              dark:border-zinc-800
+              rounded-lg
+              px-4
+              py-2
+              shadow-sm
+              flex
+              items-center
+              gap-3
+            "
+          >
+
+            <span
+              className="
+                text-sm
+                text-zinc-500
+                dark:text-zinc-400
+              "
+            >
+              Analytics Range
+            </span>
+
+            <select
+              value={analyticsFilter}
+              onChange={(e) =>
+                setAnalyticsFilter(
+                  e.target.value as
+                    | 'all'
+                    | 'monthly'
+                    | 'weekly'
+                    | 'daily'
+                )
+              }
+              className="
+                border
+                border-zinc-300
+                dark:border-zinc-700
+                rounded-md
+                px-3
+                py-1
+                bg-transparent
+                text-sm
+              "
+            >
+              <option value="all">
+                All Time
+              </option>
+
+              <option value="monthly">
+                This Month
+              </option>
+
+              <option value="weekly">
+                This Week
+              </option>
+
+              <option value="daily">
+                Today
+              </option>
+
+            </select>
+
+          </div>
+
+        </div>
+
         {/* Analytics Cards */}
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -551,58 +697,8 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-
-            {[
-              {
-                title: 'Point of Sale',
-                description:
-                  'Handle customer checkout transactions.',
-                route: '/pos'
-              },
-
-              {
-                title: 'Inventory',
-                description:
-                  'Manage products and stock levels.',
-                route: '/inventory'
-              },
-
-              {
-                title: 'Sales History',
-                description:
-                  'Review completed transactions and invoices.',
-                route: '/sales-history'
-              },
-
-              {
-                title: 'Restock',
-                description:
-                  'Add inventory stock and replenish products.',
-                route: '/restock'
-              },
-
-              {
-                title: 'Inventory Adjustment',
-                description:
-                  'Correct stock discrepancies and track damages.',
-                route: '/inventory-adjustment'
-              },
-
-              {
-                title: 'Services',
-                description:
-                  'Manage MotorShop services and pricing.',
-                route: '/services'
-              },
-
-              {
-                title: 'Reports',
-                description:
-                  'Access business reports and analytics.',
-                route: '/reports'
-              }
-
-            ].map((module) => (
+            
+            {allowedModules.map((module) => (
 
               <button
                 key={module.route}

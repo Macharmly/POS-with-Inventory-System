@@ -71,7 +71,11 @@ export const fetchSaleDetails = async (
 ========================= */
 
 export const fetchDashboardAnalytics = async (
-  business_id: number
+
+  business_id: number,
+
+  filter: 'all' | 'monthly' | 'weekly' | 'daily' = 'all'
+
 ) => {
 
   const response =
@@ -81,7 +85,11 @@ export const fetchDashboardAnalytics = async (
 
       {
         params: {
-          business_id
+
+          business_id,
+
+          filter
+
         }
       }
 
