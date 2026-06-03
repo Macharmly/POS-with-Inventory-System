@@ -37,7 +37,7 @@ interface Service {
 export default function ServicesPage() {
 
   const user = useAuthStore(
-    (state) => state.user
+    (state) => state.user,
   );
 
   const [
@@ -336,7 +336,9 @@ export default function ServicesPage() {
 
           selectedService.id,
 
-          productId
+          productId,
+
+          user!.id
 
         );
 
@@ -375,7 +377,9 @@ export default function ServicesPage() {
 
           selectedService.id,
 
-          productId
+          productId,
+
+          user!.id
 
         );
 

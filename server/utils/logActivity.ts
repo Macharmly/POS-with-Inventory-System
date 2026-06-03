@@ -24,7 +24,7 @@ const logActivity = async ({
 
   try {
 
-    await db.query(
+    await db.promise().query(
 
       `
         INSERT INTO activity_logs

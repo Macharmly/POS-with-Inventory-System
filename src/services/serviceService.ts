@@ -95,7 +95,8 @@ export const fetchServiceProducts =
   export const addServiceProduct =
   async (
     serviceId: number,
-    productId: number
+    productId: number,
+    userId: number
   ) => {
 
     const response =
@@ -104,7 +105,8 @@ export const fetchServiceProducts =
         `${API_URL}/services/${serviceId}/products`,
 
         {
-          product_id: productId
+          product_id: productId,
+          user_id: userId
         }
 
       );
@@ -116,13 +118,20 @@ export const fetchServiceProducts =
 export const removeServiceProduct =
   async (
     serviceId: number,
-    productId: number
+    productId: number,
+    userId: number
   ) => {
 
     const response =
       await axios.delete(
 
-        `${API_URL}/services/${serviceId}/products/${productId}`
+        `${API_URL}/services/${serviceId}/products/${productId}`,
+
+        {
+          data: {
+            user_id: userId
+          }
+        }
 
       );
 
