@@ -32,77 +32,75 @@ export default function ProfilePage() {
 
     try {
 
-        const response = await fetch(
+      const token =
+        localStorage.getItem('token');
 
+      const response = await fetch(
         `http://localhost:5000/api/users/profile/${user?.id}`,
-
         {
+          method: 'PUT',
 
-            method: 'PUT',
-
-            headers: {
+          headers: {
             'Content-Type':
-                'application/json'
-            },
+              'application/json',
 
-            body: JSON.stringify({
+            Authorization:
+              `Bearer ${token}`
+          },
 
-            username,
+          body: JSON.stringify({
+
+            name: username,
 
             password,
 
             profile_picture:
-                profilePicture
+              profilePicture
 
-            })
+          })
 
         }
+      );
 
-        );
-
-        const data =
+      const data =
         await response.json();
 
-        if (!response.ok) {
+      if (!response.ok) {
 
         throw new Error(
-            data.error
+          data.error
         );
 
-        }
+      }
 
-        // Update localStorage
-
-        const updatedUser = {
+      const updatedUser = {
 
         ...user,
 
         username,
 
         profile_picture:
-            profilePicture
+          profilePicture
 
-        };
+      };
 
-        localStorage.setItem(
+      localStorage.setItem(
         'user',
         JSON.stringify(updatedUser)
-        );
+      );
 
-        // Refresh page state
-
-        window.location.reload();
+      window.location.reload();
 
     } catch (error: any) {
 
-        alert(
+      alert(
         error.message ||
         'Profile update failed'
-        );
+      );
 
     }
 
-    };
+  };
 
   return (
 
