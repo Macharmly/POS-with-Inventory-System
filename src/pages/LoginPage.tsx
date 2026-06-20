@@ -760,30 +760,7 @@ export default function LoginPage() {
               mt-8
               text-center
             ">
-
-              <p className="
-                text-sm
-                text-gray-500
-                dark:text-gray-400
-              ">
-                Don&apos;t have an account?
-              </p>
-
-              <Link
-                to="/register"
-                className="
-                  inline-block
-                  mt-3
-                  text-sm
-                  font-semibold
-                  text-blue-600
-                  hover:text-blue-500
-                  dark:text-blue-400
-                "
-              >
-                Create new account
-              </Link>
-
+              
             </div>
 
           </div>

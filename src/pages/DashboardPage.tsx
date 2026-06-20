@@ -330,6 +330,15 @@ export default function DashboardPage() {
           user?.role as keyof typeof rolePermissions
         ]?.includes(module.route)
     );
+  
+  const filteredModules =
+    allowedModules.filter(
+      (module) =>
+        !(
+          user?.business_id === 1 &&
+          module.route === '/services'
+        )
+    );
 
   return (
 
@@ -698,7 +707,7 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             
-            {allowedModules.map((module) => (
+            {filteredModules.map((module) => (
 
               <button
                 key={module.route}
