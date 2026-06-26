@@ -12,3 +12,7 @@ body,
 body {
   font-family: Inter, sans-serif;
 }
+
+.print-only {
+  display: none;
+}

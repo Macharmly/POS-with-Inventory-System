@@ -10,6 +10,7 @@ import financeRoutes from './routes/financeRoutes';
 import reportRoutes from './routes/reportRoutes';
 import logRoutes from './routes/logRoutes';
 import patchNoteRoutes from './routes/patchNoteRoutes';
+import businessRoutes from './routes/businessRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -82,6 +83,13 @@ app.use(
 app.use(
   '/api/patch-notes',
   patchNoteRoutes
+);
+
+// Business Routes
+
+app.use(
+  '/api',
+  businessRoutes
 );
 
 /* =========================

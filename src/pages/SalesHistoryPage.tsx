@@ -113,6 +113,24 @@ export default function SalesHistoryPage() {
         businessName:
           data.sale.business_name,
 
+        businessAddress:
+          data.sale.business_address,
+
+        businessContactNumber:
+          data.sale.business_contact_number,
+
+        businessEmail:
+          data.sale.business_email,
+
+        businessTinNumber:
+          data.sale.business_tin_number,
+
+        businessTaxType:
+          data.sale.business_tax_type,
+
+        receiptFooter:
+          data.sale.receipt_footer,
+
         totalAmount:
           data.sale.total_amount,
 

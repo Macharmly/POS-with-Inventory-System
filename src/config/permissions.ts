@@ -20,7 +20,8 @@ export const rolePermissions = {
     '/profile',
     '/inventory-reports',
     '/reports/profit',
-    '/finance'
+    '/finance',
+    '/store-settings'
 
   ],
 

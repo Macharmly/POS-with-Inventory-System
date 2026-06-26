@@ -57,7 +57,14 @@ export const checkout = async (
       await db.query(
 
         `
-          SELECT name
+          SELECT
+            name,
+            address,
+            contact_number,
+            email,
+            tin_number,
+            tax_type,
+            receipt_footer
           FROM businesses
           WHERE id = ?
         `,
@@ -79,6 +86,9 @@ export const checkout = async (
     const businessName =
       businessRows[0]
         .name;
+    
+    const business =
+      businessRows[0];
 
     // Generate Invoice Number
 
@@ -362,6 +372,24 @@ export const checkout = async (
 
         businessName,
 
+        businessAddress:
+          business.address,
+
+        businessContactNumber:
+          business.contact_number,
+
+        businessEmail:
+          business.email,
+
+        businessTinNumber:
+          business.tin_number,
+
+        businessTaxType:
+          business.tax_type,
+
+        receiptFooter:
+          business.receipt_footer,
+
         totalAmount:
           total_amount,
 
@@ -510,7 +538,13 @@ export const getSaleDetails = async (
 
         users.name AS cashier_name,
 
-        businesses.name AS business_name
+        businesses.name AS business_name,
+        businesses.address AS business_address,
+        businesses.contact_number AS business_contact_number,
+        businesses.email AS business_email,
+        businesses.tin_number AS business_tin_number,
+        businesses.tax_type AS business_tax_type,
+        businesses.receipt_footer AS receipt_footer
 
       FROM sales
 

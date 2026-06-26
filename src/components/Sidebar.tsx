@@ -15,6 +15,7 @@ import {
   BarChart3,
   Users,
   ScrollText,
+  Store,
   Moon,
   Sun,
   LogOut
@@ -113,6 +114,14 @@ const navigation = [
     label: 'Users',
     path: '/users',
     icon: Users
+  },
+
+  // Store Settings
+
+  {
+    label: 'Store Settings',
+    path: '/store-settings',
+    icon: Store
   },
 
   // Logs

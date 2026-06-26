@@ -21,6 +21,7 @@ import ServiceReportPage from './pages/ServiceReportPage';
 import ProductPerformanceReportPage from './pages/ProductPerformanceReportPage';
 import ProfilePage from './pages/ProfilePage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import StoreSettingsPage from './pages/StoreSettingsPage';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
@@ -54,6 +55,7 @@ export default function App() {
           <Route element={<RoleProtectedRoute allowedRoles={['admin']} />}>
             <Route path="/users" element={<UserManagementPage />} />
             <Route path="/logs" element={<LogsPage />} />
+            <Route path="/store-settings" element={<StoreSettingsPage />} />
           </Route>
         </Route>
       </Routes>
