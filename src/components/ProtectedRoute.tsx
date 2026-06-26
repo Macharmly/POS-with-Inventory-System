@@ -1,67 +1,37 @@
 import {
   Navigate,
-  useLocation
+  Outlet,
+  useLocation,
+  matchPath
 } from 'react-router-dom';
 
-import {
-  useAuthStore
-} from '../store/authStore';
+import { useAuthStore } from '../store/authStore';
+import { rolePermissions } from '../config/permissions';
 
-import {
-  rolePermissions
-} from '../config/permissions';
-
-interface Props {
-  children: React.ReactNode;
-}
-
-export default function ProtectedRoute({
-  children
-}: Props) {
-
-  const user = useAuthStore(
-    (state) => state.user
-  );
-
+export default function ProtectedRoute() {
+  const user = useAuthStore((state) => state.user);
   const location = useLocation();
 
-  // Not logged in
-
   if (!user) {
-
-    return (
-      <Navigate
-        to="/"
-        replace
-      />
-    );
+    return <Navigate to="/" replace />;
   }
-
-  // Get allowed routes based on role
 
   const allowedRoutes =
-    rolePermissions[
-      user.role as keyof typeof rolePermissions
-    ] || [];
+    rolePermissions[user.role as keyof typeof rolePermissions] || [];
 
-  // Check access
-
-  const hasAccess =
-    allowedRoutes.includes(
+  const hasAccess = allowedRoutes.some((route) =>
+    matchPath(
+      {
+        path: route,
+        end: true
+      },
       location.pathname
-    );
-
-  // No permission
+    )
+  );
 
   if (!hasAccess) {
-
-    return (
-      <Navigate
-        to="/dashboard"
-        replace
-      />
-    );
+    return <Navigate to="/dashboard" replace />;
   }
 
-  return children;
+  return <Outlet />;
 }

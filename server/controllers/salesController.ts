@@ -1977,90 +1977,45 @@ export const getSalesReport = async (
    PROFIT REPORT
 ========================= */
 
-export const getProfitReport =
-  async (req: any, res: any) => {
+export const getProfitReport = async (req: any, res: any) => {
 
-    try {
+  try {
 
-      const {
-        business_id,
-        filter
-      } = req.query;
+    const { business_id } = req.params;
 
-      const [rows] =
-        await connection
-          .promise()
-          .query(
+    const businessId = Number(business_id);
 
-          `
-          SELECT
+    const [rows] = await connection.promise().query(
+      `
+      SELECT
+        si.product_id,
+        COALESCE(si.product_name, p.name) AS product_name,
+        SUM(si.quantity) AS quantity_sold,
+        SUM(si.price_at_sale * si.quantity) AS revenue,
+        SUM(p.cost_price * si.quantity) AS cost,
+        SUM((si.price_at_sale - p.cost_price) * si.quantity) AS profit
+      FROM sale_items si
+      LEFT JOIN products p ON si.product_id = p.id
+      LEFT JOIN sales s ON si.sale_id = s.id
+      WHERE s.business_id = ?
+      GROUP BY si.product_id
+      ORDER BY quantity_sold DESC
+      `,
+      [businessId]
+    );
 
-            si.product_id,
+    res.json(rows);
 
-            COALESCE(
-              si.product_name,
-              p.name
-            ) AS product_name,
+  } catch (error) {
 
-            SUM(si.quantity)
-              AS quantity_sold,
+    console.error(error);
 
-            SUM(
-              si.price_at_sale
-              * si.quantity
-            ) AS revenue,
+    res.status(500).json({
+      error: 'Failed to fetch profit report.'
+    });
 
-            SUM(
-              p.cost_price
-              * si.quantity
-            ) AS cost,
-
-            SUM(
-              (
-                si.price_at_sale
-                - p.cost_price
-              )
-              * si.quantity
-            ) AS profit
-
-          FROM sale_items si
-
-          LEFT JOIN products p
-            ON si.product_id = p.id
-
-          LEFT JOIN sales s
-            ON si.sale_id = s.id
-
-          WHERE
-            s.business_id = ?
-
-          GROUP BY
-            si.product_id
-
-          ORDER BY
-            quantity_sold DESC
-          `,
-
-          [business_id]
-
-        );
-
-      res.json(rows);
-
-    } catch (error) {
-
-      console.error(error);
-
-      res.status(500).json({
-
-        error:
-          'Failed to fetch profit report.'
-
-      });
-
-    }
-
-  };
+  }
+};
 
 /* =========================
    SERVICE REPORT

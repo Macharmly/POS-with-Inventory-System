@@ -1,21 +1,18 @@
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
 
 import authRoutes from './routes/authRoutes';
-
 import salesRoutes from './routes/salesRoutes';
-
 import productRoutes from './routes/productRoutes';
-
 import userRoutes from './routes/userRoutes';
-
 import financeRoutes from './routes/financeRoutes';
-
 import reportRoutes from './routes/reportRoutes';
-
 import logRoutes from './routes/logRoutes';
-
 import patchNoteRoutes from './routes/patchNoteRoutes';
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 
@@ -80,7 +77,7 @@ app.use(
   reportRoutes
 );
 
-// Patch Routes
+// Patch Notes Routes
 
 app.use(
   '/api/patch-notes',
@@ -123,7 +120,7 @@ app.use((req, res) => {
    Server Start
 ========================= */
 
-const PORT = 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 app.listen(PORT, () => {
 

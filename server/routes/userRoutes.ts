@@ -5,7 +5,10 @@ import {
   createUser,
   updateUser,
   deleteUser,
-  updateProfile
+  updateProfile,
+  getPasswordResetRequests,
+  resetUserPassword,
+  rejectPasswordResetRequest
 } from '../controllers/userController';
 
 import authenticateToken
@@ -23,6 +26,24 @@ router.post(
   '/',
   authenticateToken,
   createUser
+);
+
+router.get(
+  '/password-reset-requests',
+  authenticateToken,
+  getPasswordResetRequests
+);
+
+router.put(
+  '/password-reset/:id/reject',
+  authenticateToken,
+  rejectPasswordResetRequest
+);
+
+router.put(
+  '/password-reset/:id',
+  authenticateToken,
+  resetUserPassword
 );
 
 router.put(

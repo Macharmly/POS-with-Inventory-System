@@ -22,13 +22,13 @@ export default function ProfilePage() {
   const [password, setPassword] =
     useState('');
 
-  const [profilePicture,
-    setProfilePicture] =
-    useState(
-      user?.profile_picture || ''
+  const handleSave = async () => {
+
+    const confirmed = window.confirm(
+      'Are you sure you want to save these profile changes?'
     );
 
-  const handleSave = async () => {
+    if (!confirmed) return;
 
     try {
 
@@ -52,10 +52,7 @@ export default function ProfilePage() {
 
             name: username,
 
-            password,
-
-            profile_picture:
-              profilePicture
+            password
 
           })
 
@@ -68,7 +65,8 @@ export default function ProfilePage() {
       if (!response.ok) {
 
         throw new Error(
-          data.error
+          data.error ||
+          'Profile update failed'
         );
 
       }
@@ -77,10 +75,7 @@ export default function ProfilePage() {
 
         ...user,
 
-        username,
-
-        profile_picture:
-          profilePicture
+        username
 
       };
 
@@ -89,13 +84,17 @@ export default function ProfilePage() {
         JSON.stringify(updatedUser)
       );
 
+      alert(
+        'Profile updated successfully.'
+      );
+
       window.location.reload();
 
     } catch (error: any) {
 
       alert(
         error.message ||
-        'Profile update failed'
+        'Profile update failed.'
       );
 
     }
@@ -111,8 +110,6 @@ export default function ProfilePage() {
         mx-auto
         space-y-6
       ">
-
-        {/* Header */}
 
         <div>
 
@@ -135,8 +132,6 @@ export default function ProfilePage() {
 
         </div>
 
-        {/* Profile Card */}
-
         <div className="
           bg-white
           dark:bg-zinc-900
@@ -149,45 +144,24 @@ export default function ProfilePage() {
           space-y-6
         ">
 
-          {/* Avatar */}
-
           <div className="flex items-center gap-4">
 
-            {profilePicture ? (
-
-              <img
-                src={profilePicture}
-                alt="Profile"
-                className="
-                  w-20
-                  h-20
-                  rounded-full
-                  object-cover
-                "
-              />
-
-            ) : (
-
-              <div className="
-                w-20
-                h-20
-                rounded-full
-                bg-zinc-900
-                dark:bg-zinc-100
-                text-white
-                dark:text-zinc-900
-                flex
-                items-center
-                justify-center
-                text-3xl
-                font-semibold
-              ">
-
-                {username.charAt(0).toUpperCase()}
-
-              </div>
-
-            )}
+            <div className="
+              w-20
+              h-20
+              rounded-full
+              bg-zinc-900
+              dark:bg-zinc-100
+              text-white
+              dark:text-zinc-900
+              flex
+              items-center
+              justify-center
+              text-3xl
+              font-semibold
+            ">
+              {username.charAt(0).toUpperCase()}
+            </div>
 
             <div>
 
@@ -210,8 +184,6 @@ export default function ProfilePage() {
             </div>
 
           </div>
-
-          {/* Form */}
 
           <div className="space-y-4">
 
@@ -269,41 +241,6 @@ export default function ProfilePage() {
                   )
                 }
                 placeholder="Leave blank to keep current password"
-                className="
-                  w-full
-                  bg-white
-                  dark:bg-zinc-900
-                  border
-                  border-zinc-200
-                  dark:border-zinc-800
-                  rounded-md
-                  px-3
-                  py-2.5
-                "
-              />
-
-            </div>
-
-            <div>
-
-              <label className="
-                block
-                text-sm
-                font-medium
-                mb-2
-              ">
-                Profile Picture URL
-              </label>
-
-              <input
-                type="text"
-                value={profilePicture}
-                onChange={(e) =>
-                  setProfilePicture(
-                    e.target.value
-                  )
-                }
-                placeholder="https://..."
                 className="
                   w-full
                   bg-white

@@ -8,6 +8,7 @@ export const rolePermissions = {
     '/restock',
     '/inventory-adjustment',
     '/sales-history',
+    '/sales/:id',
     '/services',
     '/reports',
     '/reports/sales',
@@ -28,6 +29,7 @@ export const rolePermissions = {
     '/dashboard',
     '/pos',
     '/sales-history',
+    '/sales/:id',
     '/profile',
     '/inventory-reports',
     '/finance'
@@ -53,6 +55,7 @@ export const rolePermissions = {
     '/dashboard',
     '/inventory',
     '/sales-history',
+    '/sales/:id',
     '/services',
     '/reports',
     '/reports/sales',

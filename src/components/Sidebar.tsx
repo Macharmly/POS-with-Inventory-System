@@ -528,6 +528,12 @@ export default function Sidebar() {
             <button
               onClick={() => {
 
+                const confirmed = window.confirm(
+                  'Are you sure you want to logout?'
+                );
+
+                if (!confirmed) return;
+
                 logout();
 
                 navigate('/');

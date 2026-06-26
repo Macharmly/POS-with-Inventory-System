@@ -75,3 +75,57 @@ export const deleteUser = async (
   return response.data;
 
 };
+
+export const fetchPasswordResetRequests = async () => {
+  const token = localStorage.getItem('token');
+
+  const response = await axios.get(
+    `${API_URL}/password-reset-requests`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  return response.data;
+};
+
+export const resetUserPassword = async (
+  requestId: number,
+  new_password: string
+) => {
+  const token = localStorage.getItem('token');
+
+  const response = await axios.put(
+    `${API_URL}/password-reset/${requestId}`,
+    {
+      new_password
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  return response.data;
+};
+
+export const rejectPasswordResetRequest = async (
+  requestId: number
+) => {
+  const token = localStorage.getItem('token');
+
+  const response = await axios.put(
+    `${API_URL}/password-reset/${requestId}/reject`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  return response.data;
+};

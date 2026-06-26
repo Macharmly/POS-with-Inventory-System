@@ -231,19 +231,16 @@ export const fetchSalesReport = async (
 ========================= */
 
 export const fetchProfitReport =
-  async (
-    business_id: number
-  ) => {
+  async (business_id: number) => {
 
-    const response =
-      await axios.get(
-
-        `${API_URL}/reports/profit/${business_id}`
-
-      );
+    const response = await axios.get(
+      `${API_URL}/reports/profit`,
+      {
+        params: { business_id }
+      }
+    );
 
     return response.data;
-
   };
 
 /* =========================

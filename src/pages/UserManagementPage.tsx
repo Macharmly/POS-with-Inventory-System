@@ -9,7 +9,10 @@ import {
   fetchUsers,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  fetchPasswordResetRequests,
+  resetUserPassword,
+  rejectPasswordResetRequest
 } from '../services/userService';
 
 import {
@@ -22,6 +25,17 @@ interface User {
   email: string;
   role: string;
   business_id: number;
+}
+
+interface PasswordResetRequest {
+  id: number;
+  user_id: number;
+  email: string;
+  business_id: number;
+  status: string;
+  requested_at: string;
+  completed_at: string | null;
+  name: string;
 }
 
 export default function UserManagementPage() {
@@ -42,6 +56,12 @@ export default function UserManagementPage() {
 
   const [password, setPassword] =
     useState('');
+
+  const [resetRequests, setResetRequests] =
+    useState<PasswordResetRequest[]>([]);
+
+  const [resetPasswords, setResetPasswords] =
+    useState<Record<number, string>>({});
 
   const [role, setRole] =
     useState('cashier');
@@ -66,11 +86,77 @@ export default function UserManagementPage() {
 
   };
 
+  const loadPasswordResetRequests = async () => {
+    try {
+      const data = await fetchPasswordResetRequests();
+      setResetRequests(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
-
     loadUsers();
-
+    loadPasswordResetRequests();
   }, []);
+
+  const handleResetPassword = async (
+    requestId: number
+  ) => {
+    const newPassword = resetPasswords[requestId];
+
+    if (!newPassword) {
+      alert('Please enter a new password.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Reset password for this user?'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await resetUserPassword(
+        requestId,
+        newPassword
+      );
+
+      alert('Password reset successfully.');
+
+      setResetPasswords((prev) => {
+        const updated = { ...prev };
+        delete updated[requestId];
+        return updated;
+      });
+
+      loadPasswordResetRequests();
+    } catch (error) {
+      console.error(error);
+      alert('Failed to reset password.');
+    }
+  };
+
+  const handleRejectPasswordReset = async (
+    requestId: number
+  ) => {
+    const confirmed = window.confirm(
+      'Reject this password reset request?'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await rejectPasswordResetRequest(requestId);
+
+      alert('Password reset request rejected.');
+
+      loadPasswordResetRequests();
+    } catch (error) {
+      console.error(error);
+      alert('Failed to reject password reset request.');
+    }
+  };
 
   const handleSubmit = async () => {
 
@@ -404,6 +490,136 @@ export default function UserManagementPage() {
               : 'Create User'}
           </button>
 
+        </div>
+
+        {/* Password Reset Requests */}
+
+        <div className="
+          bg-white
+          dark:bg-zinc-900
+          border
+          border-zinc-200
+          dark:border-zinc-800
+          rounded-lg
+          shadow-sm
+          overflow-hidden
+        ">
+          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+            <h2 className="text-xl font-semibold">
+              Password Reset Requests
+            </h2>
+
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+              Pending password reset requests from staff.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="border-b border-zinc-200 dark:border-zinc-800">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-zinc-500">
+                    Name
+                  </th>
+
+                  <th className="px-6 py-4 text-left text-sm font-medium text-zinc-500">
+                    Email
+                  </th>
+
+                  <th className="px-6 py-4 text-left text-sm font-medium text-zinc-500">
+                    Requested At
+                  </th>
+
+                  <th className="px-6 py-4 text-left text-sm font-medium text-zinc-500">
+                    New Password
+                  </th>
+
+                  <th className="px-6 py-4 text-left text-sm font-medium text-zinc-500">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {resetRequests.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-6 py-6 text-sm text-zinc-500"
+                    >
+                      No pending password reset requests.
+                    </td>
+                  </tr>
+                ) : (
+                  resetRequests.map((request) => (
+                    <tr
+                      key={request.id}
+                      className="border-b border-zinc-100 dark:border-zinc-800"
+                    >
+                      <td className="px-6 py-4 font-medium">
+                        {request.name}
+                      </td>
+
+                      <td className="px-6 py-4 text-zinc-500">
+                        {request.email}
+                      </td>
+
+                      <td className="px-6 py-4 text-zinc-500">
+                        {new Date(request.requested_at).toLocaleString()}
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <input
+                          type="password"
+                          placeholder="New password"
+                          value={resetPasswords[request.id] || ''}
+                          onChange={(e) =>
+                            setResetPasswords({
+                              ...resetPasswords,
+                              [request.id]: e.target.value
+                            })
+                          }
+                          className="
+                            bg-white
+                            dark:bg-zinc-900
+                            border
+                            border-zinc-200
+                            dark:border-zinc-800
+                            rounded-md
+                            px-3
+                            py-2
+                            text-sm
+                          "
+                        />
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() =>
+                              handleResetPassword(request.id)
+                            }
+                            className="text-sm font-medium text-blue-600"
+                          >
+                            Reset Password
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              handleRejectPasswordReset(request.id)
+                            }
+                            className="text-sm font-medium text-red-600"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Users Table */}

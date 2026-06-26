@@ -1,15 +1,17 @@
-import { Navigate } from 'react-router-dom';
+import {
+  Navigate,
+  Outlet
+} from 'react-router-dom';
 
-import { useAuthStore } from '../store/authStore';
+import {
+  useAuthStore
+} from '../store/authStore';
 
 interface Props {
-  children: React.ReactNode;
-
   allowedRoles: string[];
 }
 
 export default function RoleProtectedRoute({
-  children,
   allowedRoles
 }: Props) {
 
@@ -18,14 +20,26 @@ export default function RoleProtectedRoute({
   );
 
   if (!user) {
-    return <Navigate to="/" />;
+    return (
+      <Navigate
+        to="/"
+        replace
+      />
+    );
   }
 
   if (
-    !allowedRoles.includes(user.role)
+    !allowedRoles.includes(
+      user.role
+    )
   ) {
-    return <Navigate to="/dashboard" />;
+    return (
+      <Navigate
+        to="/dashboard"
+        replace
+      />
+    );
   }
 
-  return <>{children}</>;
+  return <Outlet />;
 }

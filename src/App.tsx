@@ -1,8 +1,4 @@
-import {
-  BrowserRouter,
-  Routes,
-  Route
-} from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -23,218 +19,44 @@ import LowStockReportPage from './pages/LowStockReportPage';
 import ProfitReportPage from './pages/ProfitReportPage';
 import ServiceReportPage from './pages/ServiceReportPage';
 import ProductPerformanceReportPage from './pages/ProductPerformanceReportPage';
-import RoleProtectedRoute from './components/RoleProtectedRoute';
 import ProfilePage from './pages/ProfilePage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
 import ProtectedRoute from './components/ProtectedRoute';
+import RoleProtectedRoute from './components/RoleProtectedRoute';
 
 export default function App() {
-
   return (
-
     <BrowserRouter>
-
       <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-        {/* Public Route */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/pos" element={<POSPage />} />
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/inventory-reports" element={<InventoryReportPage />} />
+          <Route path="/sales-history" element={<SalesHistoryPage />} />
+          <Route path="/sales/:id" element={<SaleDetailsPage />} />
+          <Route path="/restock" element={<RestockPage />} />
+          <Route path="/inventory-adjustment" element={<InventoryAdjustmentPage />} />
+          <Route path="/finance" element={<FinancePage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/reports/sales" element={<SalesReportPage />} />
+          <Route path="/reports/services" element={<ServiceReportPage />} />
+          <Route path="/reports/low-stock" element={<LowStockReportPage />} />
+          <Route path="/reports/profit" element={<ProfitReportPage />} />
+          <Route path="/reports/product-performance" element={<ProductPerformanceReportPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
 
-        <Route
-          path="/"
-          element={<LoginPage />}
-        />
-
-        {/* Protected Routes */}
-
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/pos"
-          element={
-            <ProtectedRoute>
-              <POSPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/inventory"
-          element={
-            <ProtectedRoute>
-              <InventoryPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/inventory-reports"
-          element={
-            <ProtectedRoute>
-              <InventoryReportPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/sales-history"
-          element={
-            <ProtectedRoute>
-              <SalesHistoryPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/sales/:id"
-          element={
-            <ProtectedRoute>
-              <SaleDetailsPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/restock"
-          element={
-            <ProtectedRoute>
-              <RestockPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/inventory-adjustment"
-          element={
-            <ProtectedRoute>
-              <InventoryAdjustmentPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/finance"
-          element={
-            <ProtectedRoute>
-              <FinancePage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/reports/low-stock"
-          element={
-            <ProtectedRoute>
-              <LowStockReportPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/reports/profit"
-          element={
-            <ProtectedRoute>
-              <ProfitReportPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/reports/product-performance"
-          element={
-            <ProtectedRoute>
-              <ProductPerformanceReportPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/services"
-          element={
-            <ProtectedRoute>
-              <ServicesPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/reports"
-          element={
-            <ProtectedRoute>
-              <ReportsPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/reports/sales"
-          element={
-            <ProtectedRoute>
-              <SalesReportPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/reports/services"
-          element={
-            <ProtectedRoute>
-              <ServiceReportPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/users"
-          element={
-            <ProtectedRoute>
-
-              <RoleProtectedRoute
-                allowedRoles={[
-                  'admin'
-                ]}
-              >
-                <UserManagementPage />
-              </RoleProtectedRoute>
-
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/logs"
-          element={
-            <ProtectedRoute>
-
-              <RoleProtectedRoute
-                allowedRoles={[
-                  'admin'
-                ]}
-              >
-                <LogsPage />
-              </RoleProtectedRoute>
-
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
-
+          <Route element={<RoleProtectedRoute allowedRoles={['admin']} />}>
+            <Route path="/users" element={<UserManagementPage />} />
+            <Route path="/logs" element={<LogsPage />} />
+          </Route>
+        </Route>
       </Routes>
-
     </BrowserRouter>
-
   );
 }

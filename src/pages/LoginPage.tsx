@@ -114,60 +114,39 @@ export default function LoginPage() {
 
     );
 
-  const handleLogin =
-    async (
-      e: React.FormEvent
-    ) => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-      e.preventDefault();
+    if (!selectedBusiness) {
+      setError('Please select a business.');
+      return;
+    }
 
-      setError('');
+    setError('');
+    setLoading(true);
 
-      setLoading(true);
+    try {
+      const data = await loginUser(
+        email.trim(),
+        password,
+        selectedBusiness
+      );
 
-      try {
+      login(data.user, data.token);
 
-        const data =
-          await loginUser(
-            email,
-            password,
-            selectedBusiness!
-          )
-
-        login(
-
-          {
-
-            ...data.user,
-
-            selected_business:
-              selectedBusiness
-
-          },
-
-          data.token
-
-        );
-
-        navigate('/dashboard');
-
-      } catch (err: any) {
-
-        setError(
-
-          err.response?.data?.error ||
-
-          'Authentication failed.'
-
-        );
-
-      } finally {
-
-        setLoading(false);
-
-      }
-
-    };
+      navigate('/dashboard', {
+        replace: true
+      });
+    } catch (err: any) {
+      setError(
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        'Authentication failed.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
 
@@ -725,7 +704,9 @@ export default function LoginPage() {
                 type="submit"
                 disabled={
                   loading ||
-                  !selectedBusiness
+                  !selectedBusiness ||
+                  !email.trim() ||
+                  !password
                 }
                 className="
                   w-full
@@ -742,14 +723,7 @@ export default function LoginPage() {
                   shadow-blue-500/20
                 "
               >
-
-                {loading
-
-                  ? 'Signing in...'
-
-                  : 'Login'
-                }
-
+                {loading ? 'Signing in...' : 'Login'}
               </button>
 
             </form>
