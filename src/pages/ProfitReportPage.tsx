@@ -11,17 +11,12 @@ import {
 } from '../store/authStore';
 
 interface ProfitItem {
-
+  product_id: number;
   product_name: string;
-
   quantity_sold: number;
-
   revenue: number;
-
   cost: number;
-
   profit: number;
-
 }
 
 export default function ProfitReportPage() {
@@ -431,10 +426,9 @@ export default function ProfitReportPage() {
 
                 <tbody>
 
-                  {profitData.map((item) => (
+                  {profitData.map((item, index) => (
 
-                    <tr
-                      key={item.product_name}
+                  <tr key={`${item.product_id}-${index}`}
                       className="
                         border-t
                         border-zinc-200

@@ -95,7 +95,7 @@ router.get(
 );
 
 router.get(
-  '/reports/profit/:business_id',
+  '/reports/profit',
   getProfitReport
 );
 
