@@ -2,20 +2,23 @@ import { create } from 'zustand';
 
 interface ThemeState {
   theme: 'light' | 'dark';
-
   toggleTheme: () => void;
 }
 
 const savedTheme =
-  localStorage.getItem('theme');
+  (localStorage.getItem('theme') as 'light' | 'dark') ||
+  'light';
+
+// Apply the saved theme immediately
+document.documentElement.classList.toggle(
+  'dark',
+  savedTheme === 'dark'
+);
 
 export const useThemeStore =
   create<ThemeState>((set) => ({
 
-    theme:
-      savedTheme === 'dark'
-        ? 'dark'
-        : 'light',
+    theme: savedTheme,
 
     toggleTheme: () => {
 
@@ -31,10 +34,17 @@ export const useThemeStore =
           nextTheme
         );
 
+        document.documentElement.classList.toggle(
+          'dark',
+          nextTheme === 'dark'
+        );
+
         return {
           theme: nextTheme
         };
+
       });
+
     }
 
   }));

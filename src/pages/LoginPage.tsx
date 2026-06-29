@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 import {
@@ -12,6 +12,7 @@ import {
 
 import { loginUser } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
+import { useThemeStore } from '../store/themeStore';
 
 const businesses = [
 
@@ -69,41 +70,10 @@ export default function LoginPage() {
     setLoading] =
     useState(false);
 
-  const [darkMode,
-    setDarkMode] =
-    useState(() => {
+  const theme = useThemeStore((state) => state.theme);
+  const toggleTheme = useThemeStore((state) => state.toggleTheme);
 
-      return localStorage.getItem(
-        'theme'
-      ) !== 'light';
-
-    });
-
-  useEffect(() => {
-
-    if (darkMode) {
-
-      document.documentElement
-        .classList.add('dark');
-
-      localStorage.setItem(
-        'theme',
-        'dark'
-      );
-
-    } else {
-
-      document.documentElement
-        .classList.remove('dark');
-
-      localStorage.setItem(
-        'theme',
-        'light'
-      );
-
-    }
-
-  }, [darkMode]);
+  const darkMode = theme === 'dark';
 
   const currentBusiness =
     businesses.find(
@@ -312,11 +282,7 @@ export default function LoginPage() {
           ">
 
             <button
-              onClick={() =>
-                setDarkMode(
-                  !darkMode
-                )
-              }
+              onClick={toggleTheme}
               className="
                 w-11
                 h-11

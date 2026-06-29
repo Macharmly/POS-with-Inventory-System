@@ -5,20 +5,22 @@ from '../middleware/authenticateToken';
 
 import {
   getProducts,
-  createProduct
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  getDropdownOptions,
+  createDropdownOption
 } from '../controllers/productController';
 
 const router = express.Router();
 
-router.get(
-  '/',
-  getProducts
-);
+router.get('/dropdowns/:type', getDropdownOptions);
+router.post('/dropdowns/:type', authenticateToken, createDropdownOption);
 
-router.post(
-  '/',
-  authenticateToken,
-  createProduct
-);
+router.get('/', getProducts);
+router.post('/', authenticateToken, createProduct);
+
+router.put('/:id', authenticateToken, updateProduct);
+router.delete('/:id', authenticateToken, deleteProduct);
 
 export default router;

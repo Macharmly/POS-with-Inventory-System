@@ -96,7 +96,8 @@ export default function POSPage() {
     try {
 
       const data = await fetchProducts(
-        Number(user?.business_id)
+        Number(user?.business_id),
+        'active'
       );
 
       setProducts(data);
