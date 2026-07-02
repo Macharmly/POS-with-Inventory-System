@@ -9,13 +9,20 @@ import connection from '../dbConnection';
 import logActivity from '../utils/logActivity';
 
 const dropdownTables: Record<string, string> = {
-    categories: 'product_categories',
-    brands: 'product_brands',
-    suppliers: 'product_suppliers',
-    units: 'product_units'
-  };
+  categories: 'product_categories',
+  brands: 'product_brands',
+  suppliers: 'product_suppliers',
+  units: 'product_units'
+};
 
-export const getProducts = (
+const dropdownLabels: Record<string, string> = {
+  categories: 'Category',
+  brands: 'Brand',
+  suppliers: 'Supplier',
+  units: 'Unit'
+};
+
+export const getProducts = async (
   req: AuthRequest,
   res: Response
 ) => {
@@ -23,78 +30,67 @@ export const getProducts = (
   const { business_id, status } = req.query;
 
   if (!business_id) {
-
     return res.status(400).json({
+      error: 'business_id is required.'
+    });
+  }
 
-      error:
-        'business_id is required.'
+  try {
 
+    let sql = `
+      SELECT
+        id,
+        business_id,
+        name,
+        sku_barcode,
+        category,
+        brand,
+        supplier,
+        unit_type,
+        description,
+        status,
+        cost_price,
+        selling_price,
+        stock_quantity,
+        low_stock_threshold,
+        created_at,
+        updated_at
+      FROM products
+      WHERE business_id = ?
+    `;
+
+    const params: any[] = [business_id];
+
+    if (status) {
+      sql += `
+        AND status = ?
+      `;
+
+      params.push(status);
+    }
+
+    const [results] =
+      await connection
+        .promise()
+        .query(
+          sql,
+          params
+        );
+
+    return res.json(results);
+
+  } catch (error: any) {
+
+    console.error(
+      '❌ Fetch Products Error:',
+      error.message
+    );
+
+    return res.status(500).json({
+      error: 'Failed to fetch products'
     });
 
   }
-
-  let sql = `
-
-    SELECT
-      id,
-      business_id,
-      name,
-      sku_barcode,
-      category,
-      brand,
-      supplier,
-      unit_type,
-      description,
-      status,
-      cost_price,
-      selling_price,
-      stock_quantity,
-      low_stock_threshold,
-      created_at,
-      updated_at
-
-    FROM products
-
-    WHERE business_id = ?
-
-  `;
-
-  const params: any[] = [business_id];
-
-  if (status) {
-    sql += `
-      AND status = ?
-    `;
-
-    params.push(status);
-  }
-
-  connection.query(
-
-    sql,
-
-    params,
-
-    (err, results) => {
-
-      if (err) {
-
-        console.error(err);
-
-        return res.status(500).json({
-
-          error:
-            'Failed to fetch products'
-
-        });
-
-      }
-
-      return res.json(results);
-
-    }
-
-  );
 
 };
 
@@ -127,107 +123,88 @@ export const createProduct = async (
     selling_price === undefined ||
     stock_quantity === undefined
   ) {
-
     return res.status(400).json({
+      error: 'Required fields are missing.'
+    });
+  }
 
-      error:
-        'Required fields are missing.'
+  try {
 
+    const sql = `
+      INSERT INTO products (
+        business_id,
+        name,
+        sku_barcode,
+        category,
+        brand,
+        supplier,
+        unit_type,
+        description,
+        status,
+        cost_price,
+        selling_price,
+        stock_quantity,
+        low_stock_threshold
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const [results]: any =
+      await connection
+        .promise()
+        .query(
+          sql,
+          [
+            business_id,
+            name,
+            sku_barcode,
+            category || null,
+            brand || null,
+            supplier || null,
+            unit_type || 'pcs',
+            description || null,
+            status || 'active',
+            cost_price,
+            selling_price,
+            stock_quantity,
+            low_stock_threshold ?? 5
+          ]
+        );
+
+    await logActivity({
+      user_id: req.user!.id,
+      business_id,
+      module: 'Inventory',
+      action: 'CREATE_PRODUCT',
+      description:
+        `Created product "${name}" with SKU/Barcode "${sku_barcode}" and initial stock of ${stock_quantity}`
+    });
+
+    return res.status(201).json({
+      message: 'Product created successfully',
+      results
+    });
+
+  } catch (error: any) {
+
+    console.error(
+      '❌ Create Product Error:',
+      error.message
+    );
+
+    return res.status(500).json({
+      error: 'Failed to create product'
     });
 
   }
 
-  const sql = `
-
-    INSERT INTO products (
-      business_id,
-      name,
-      sku_barcode,
-      category,
-      brand,
-      supplier,
-      unit_type,
-      description,
-      status,
-      cost_price,
-      selling_price,
-      stock_quantity,
-      low_stock_threshold
-    )
-
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-
-  `;
-
-  connection.query(
-
-    sql,
-
-    [
-      business_id,
-      name,
-      sku_barcode,
-      category || null,
-      brand || null,
-      supplier || null,
-      unit_type || 'pcs',
-      description || null,
-      status || 'active',
-      cost_price,
-      selling_price,
-      stock_quantity,
-      low_stock_threshold ?? 5
-    ],
-
-    (err, results) => {
-
-      if (err) {
-
-        console.error(err);
-
-        return res.status(500).json({
-
-          error:
-            'Failed to create product'
-
-        });
-
-      }
-
-      logActivity({
-
-        user_id: req.user!.id,
-
-        business_id,
-
-        module: 'Inventory',
-
-        action: 'CREATE_PRODUCT',
-
-        description:
-          `Created product: ${name}`
-
-      });
-
-      return res.status(201).json({
-
-        message:
-          'Product created successfully',
-
-        results
-
-      });
-
-    }
-
-  );
-
 };
 
-export const updateProduct = (
+export const updateProduct = async (
   req: AuthRequest,
   res: Response
 ) => {
+
   const { id } = req.params;
 
   const {
@@ -260,78 +237,118 @@ export const updateProduct = (
     });
   }
 
-  const sql = `
-    UPDATE products
-    SET
-      name = ?,
-      sku_barcode = ?,
-      category = ?,
-      brand = ?,
-      supplier = ?,
-      unit_type = ?,
-      description = ?,
-      status = ?,
-      cost_price = ?,
-      selling_price = ?,
-      stock_quantity = ?,
-      low_stock_threshold = ?
-    WHERE id = ?
-    AND business_id = ?
-  `;
+  try {
 
-  connection.query(
-    sql,
-    [
-      name,
-      sku_barcode,
-      category || null,
-      brand || null,
-      supplier || null,
-      unit_type || 'pcs',
-      description || null,
-      status || 'active',
-      cost_price,
-      selling_price,
-      stock_quantity,
-      low_stock_threshold ?? 5,
-      id,
-      business_id
-    ],
-    (err, results: any) => {
-      if (err) {
-        console.error(err);
+    const [oldRows]: any =
+      await connection
+        .promise()
+        .query(
+          `
+          SELECT
+            name,
+            sku_barcode,
+            stock_quantity
+          FROM products
+          WHERE id = ?
+          AND business_id = ?
+          `,
+          [
+            id,
+            business_id
+          ]
+        );
 
-        return res.status(500).json({
-          error: 'Failed to update product'
-        });
-      }
-
-      if (results.affectedRows === 0) {
-        return res.status(404).json({
-          error: 'Product not found.'
-        });
-      }
-
-      logActivity({
-        user_id: req.user!.id,
-        business_id,
-        module: 'Inventory',
-        action: 'UPDATE_PRODUCT',
-        description: `Updated product: ${name}`
-      });
-
-      return res.json({
-        message: 'Product updated successfully',
-        results
+    if (oldRows.length === 0) {
+      return res.status(404).json({
+        error: 'Product not found.'
       });
     }
-  );
+
+    const oldProduct =
+      oldRows[0];
+
+    const sql = `
+      UPDATE products
+      SET
+        name = ?,
+        sku_barcode = ?,
+        category = ?,
+        brand = ?,
+        supplier = ?,
+        unit_type = ?,
+        description = ?,
+        status = ?,
+        cost_price = ?,
+        selling_price = ?,
+        stock_quantity = ?,
+        low_stock_threshold = ?
+      WHERE id = ?
+      AND business_id = ?
+    `;
+
+    const [results]: any =
+      await connection
+        .promise()
+        .query(
+          sql,
+          [
+            name,
+            sku_barcode,
+            category || null,
+            brand || null,
+            supplier || null,
+            unit_type || 'pcs',
+            description || null,
+            status || 'active',
+            cost_price,
+            selling_price,
+            stock_quantity,
+            low_stock_threshold ?? 5,
+            id,
+            business_id
+          ]
+        );
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({
+        error: 'Product not found.'
+      });
+    }
+
+    await logActivity({
+      user_id: req.user!.id,
+      business_id,
+      module: 'Inventory',
+      action: 'UPDATE_PRODUCT',
+      description:
+        `Updated product "${oldProduct.name}" to "${name}". Stock: ${oldProduct.stock_quantity} → ${stock_quantity}`
+    });
+
+    return res.json({
+      message: 'Product updated successfully',
+      results
+    });
+
+  } catch (error: any) {
+
+    console.error(
+      '❌ Update Product Error:',
+      error.message
+    );
+
+    return res.status(500).json({
+      error: 'Failed to update product'
+    });
+
+  }
+
 };
 
-export const deleteProduct = (
+export const deleteProduct = async (
   req: AuthRequest,
   res: Response
 ) => {
+
   const { id } = req.params;
   const { business_id } = req.body;
 
@@ -341,74 +358,85 @@ export const deleteProduct = (
     });
   }
 
-  const findSql = `
-    SELECT name
-    FROM products
-    WHERE id = ?
-    AND business_id = ?
-  `;
+  try {
 
-  connection.query(
-    findSql,
-    [id, business_id],
-    (findErr, findResults: any) => {
-      if (findErr) {
-        console.error(findErr);
+    const [findResults]: any =
+      await connection
+        .promise()
+        .query(
+          `
+          SELECT
+            name,
+            sku_barcode,
+            stock_quantity
+          FROM products
+          WHERE id = ?
+          AND business_id = ?
+          `,
+          [
+            id,
+            business_id
+          ]
+        );
 
-        return res.status(500).json({
-          error: 'Failed to find product.'
-        });
-      }
-
-      if (findResults.length === 0) {
-        return res.status(404).json({
-          error: 'Product not found.'
-        });
-      }
-
-      const productName =
-        findResults[0].name;
-
-      const deleteSql = `
-        DELETE FROM products
-        WHERE id = ?
-        AND business_id = ?
-      `;
-
-      connection.query(
-        deleteSql,
-        [id, business_id],
-        (deleteErr, deleteResults) => {
-          if (deleteErr) {
-            console.error(deleteErr);
-
-            return res.status(500).json({
-              error: 'Failed to delete product.'
-            });
-          }
-
-          logActivity({
-            user_id: req.user!.id,
-            business_id,
-            module: 'Inventory',
-            action: 'DELETE_PRODUCT',
-            description: `Deleted product: ${productName}`
-          });
-
-          return res.json({
-            message: 'Product deleted successfully.',
-            results: deleteResults
-          });
-        }
-      );
+    if (findResults.length === 0) {
+      return res.status(404).json({
+        error: 'Product not found.'
+      });
     }
-  );
+
+    const product =
+      findResults[0];
+
+    const [deleteResults]: any =
+      await connection
+        .promise()
+        .query(
+          `
+          DELETE FROM products
+          WHERE id = ?
+          AND business_id = ?
+          `,
+          [
+            id,
+            business_id
+          ]
+        );
+
+    await logActivity({
+      user_id: req.user!.id,
+      business_id,
+      module: 'Inventory',
+      action: 'DELETE_PRODUCT',
+      description:
+        `Deleted product "${product.name}" with SKU/Barcode "${product.sku_barcode}" and remaining stock of ${product.stock_quantity}`
+    });
+
+    return res.json({
+      message: 'Product deleted successfully.',
+      results: deleteResults
+    });
+
+  } catch (error: any) {
+
+    console.error(
+      '❌ Delete Product Error:',
+      error.message
+    );
+
+    return res.status(500).json({
+      error: 'Failed to delete product.'
+    });
+
+  }
+
 };
 
-export const getDropdownOptions = (
+export const getDropdownOptions = async (
   req: AuthRequest,
   res: Response
 ) => {
+
   const type = req.params.type as string;
   const { business_id } = req.query;
 
@@ -426,36 +454,49 @@ export const getDropdownOptions = (
     });
   }
 
-  const sql = `
-    SELECT id, name
-    FROM ${table}
-    WHERE business_id = ?
-    ORDER BY name ASC
-  `;
+  try {
 
-  connection.query(
-    sql,
-    [business_id],
-    (err, results) => {
-      if (err) {
-        console.error(err);
+    const [results] =
+      await connection
+        .promise()
+        .query(
+          `
+          SELECT id, name
+          FROM ${table}
+          WHERE business_id = ?
+          ORDER BY name ASC
+          `,
+          [business_id]
+        );
 
-        return res.status(500).json({
-          error: 'Failed to fetch dropdown options.'
-        });
-      }
+    return res.json(results);
 
-      return res.json(results);
-    }
-  );
+  } catch (error: any) {
+
+    console.error(
+      '❌ Fetch Dropdown Options Error:',
+      error.message
+    );
+
+    return res.status(500).json({
+      error: 'Failed to fetch dropdown options.'
+    });
+
+  }
+
 };
 
-export const createDropdownOption = (
+export const createDropdownOption = async (
   req: AuthRequest,
   res: Response
 ) => {
+
   const type = req.params.type as string;
-  const { business_id, name } = req.body;
+
+  const {
+    business_id,
+    name
+  } = req.body;
 
   const table = dropdownTables[type];
 
@@ -471,30 +512,55 @@ export const createDropdownOption = (
     });
   }
 
-  const sql = `
-    INSERT IGNORE INTO ${table} (
-      business_id,
-      name
-    )
-    VALUES (?, ?)
-  `;
+  try {
 
-  connection.query(
-    sql,
-    [business_id, name.trim()],
-    (err, results) => {
-      if (err) {
-        console.error(err);
+    const cleanName =
+      name.trim();
 
-        return res.status(500).json({
-          error: 'Failed to create dropdown option.'
-        });
-      }
+    const [results]: any =
+      await connection
+        .promise()
+        .query(
+          `
+          INSERT IGNORE INTO ${table} (
+            business_id,
+            name
+          )
+          VALUES (?, ?)
+          `,
+          [
+            business_id,
+            cleanName
+          ]
+        );
 
-      return res.status(201).json({
-        message: 'Option saved successfully.',
-        results
+    if (results.affectedRows > 0) {
+      await logActivity({
+        user_id: req.user!.id,
+        business_id,
+        module: 'Inventory',
+        action: 'CREATE_DROPDOWN_OPTION',
+        description:
+          `Created ${dropdownLabels[type] || 'dropdown option'}: "${cleanName}"`
       });
     }
-  );
+
+    return res.status(201).json({
+      message: 'Option saved successfully.',
+      results
+    });
+
+  } catch (error: any) {
+
+    console.error(
+      '❌ Create Dropdown Option Error:',
+      error.message
+    );
+
+    return res.status(500).json({
+      error: 'Failed to create dropdown option.'
+    });
+
+  }
+
 };

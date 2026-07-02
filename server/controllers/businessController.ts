@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import connection from '../dbConnection';
 
+import logActivity from '../utils/logActivity';
+
 export const getBusinessById = async (
   req: Request,
   res: Response
@@ -56,10 +58,30 @@ export const updateBusiness = async (
     email,
     tin_number,
     tax_type,
-    receipt_footer
+    receipt_footer,
+    user_id
   } = req.body;
 
   try {
+    const [oldRows]: any =
+      await connection
+        .promise()
+        .query(
+          `
+          SELECT
+            name
+          FROM businesses
+          WHERE id = ?
+          `,
+          [id]
+        );
+
+    if (oldRows.length === 0) {
+      return res.status(404).json({
+        error: 'Business not found'
+      });
+    }
+
     await connection
       .promise()
       .query(
@@ -86,6 +108,15 @@ export const updateBusiness = async (
           id
         ]
       );
+
+    await logActivity({
+      user_id,
+      business_id: Number(id),
+      module: 'Business',
+      action: 'UPDATE_BUSINESS',
+      description:
+        `Updated business information for "${oldRows[0].name}" to "${name}"`
+    });
 
     res.json({
       success: true,
