@@ -70,7 +70,7 @@ export default function ReceiptModal({
 
             .receipt {
               width: ${isThermal ? '80mm' : '170mm'};
-              margin: 0 auto;
+              margin: ${isThermal ? '12mm auto 0' : '20mm auto 0'};
             }
 
             * {
