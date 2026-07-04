@@ -35,7 +35,7 @@ export default function authenticateToken(
 
     const decoded = jwt.verify(
       token,
-      'hardware_secret_key'
+      process.env.JWT_SECRET as string
     );
 
     req.user = decoded;

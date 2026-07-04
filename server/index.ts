@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 
 import authRoutes from './routes/authRoutes';
 import salesRoutes from './routes/salesRoutes';
@@ -12,116 +13,40 @@ import logRoutes from './routes/logRoutes';
 import patchNoteRoutes from './routes/patchNoteRoutes';
 import businessRoutes from './routes/businessRoutes';
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 
-/* =========================
-   Middleware
-========================= */
-
 app.use(cors());
-
 app.use(express.json());
 
-/* =========================
-   API Routes
-========================= */
-
-// Authentication Routes
-
-app.use(
-  '/api/auth',
-  authRoutes
-);
-
-// Sales Routes
-
-app.use(
-  '/api',
-  salesRoutes
-);
-
-// Product Routes
-
-app.use(
-  '/api/products',
-  productRoutes
-);
-
-// User Management Routes
-
-app.use(
-  '/api/users',
-  userRoutes
-);
-
-// Activity Logs Routes
-
-app.use(
-  '/api/logs',
-  logRoutes
-);
-
-// Finance Routes
-
-app.use(
-  '/api/finance',
-  financeRoutes
-);
-
-// Report Routes
-
-app.use(
-  '/api',
-  reportRoutes
-);
-
-// Patch Notes Routes
-
-app.use(
-  '/api/patch-notes',
-  patchNoteRoutes
-);
-
-// Business Routes
-
-app.use(
-  '/api',
-  businessRoutes
-);
-
-/* =========================
-   Health Check API
-========================= */
+app.use('/api/auth', authRoutes);
+app.use('/api', salesRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/logs', logRoutes);
+app.use('/api/finance', financeRoutes);
+app.use('/api', reportRoutes);
+app.use('/api/patch-notes', patchNoteRoutes);
+app.use('/api', businessRoutes);
 
 app.get('/api/health', (req, res) => {
-
   res.json({
-
     status: 'OK',
-
-    message:
-      'Backend API is running'
-
+    message: 'Backend API is running'
   });
-
 });
 
 /* =========================
-   404 Handler
+   Serve React / Vite Frontend
 ========================= */
 
-app.use((req, res) => {
+const clientPath = path.join(__dirname, '..', 'dist');
 
-  res.status(404).json({
+app.use(express.static(clientPath));
 
-    error:
-      `Route not found: ${req.originalUrl}`
-
-  });
-
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(clientPath, 'index.html'));
 });
 
 /* =========================
@@ -131,9 +56,5 @@ app.use((req, res) => {
 const PORT = Number(process.env.PORT) || 5000;
 
 app.listen(PORT, () => {
-
-  console.log(
-    `🚀 Secure backend API running on http://localhost:${PORT}`
-  );
-
+  console.log(`🚀 App running on port ${PORT}`);
 });

@@ -67,7 +67,7 @@ export const loginUser = async (
             role: user.role,
             business_id: user.business_id
           },
-          'hardware_secret_key',
+          process.env.JWT_SECRET as string,
           {
             expiresIn: '1d'
           }
