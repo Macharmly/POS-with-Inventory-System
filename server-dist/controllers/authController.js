@@ -42,7 +42,7 @@ const loginUser = async (req, res) => {
                 username: user.name,
                 role: user.role,
                 business_id: user.business_id
-            }, 'hardware_secret_key', {
+            }, process.env.JWT_SECRET, {
                 expiresIn: '1d'
             });
             res.json({

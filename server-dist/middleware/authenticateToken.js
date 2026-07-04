@@ -15,7 +15,7 @@ function authenticateToken(req, res, next) {
         });
     }
     try {
-        const decoded = jsonwebtoken_1.default.verify(token, 'hardware_secret_key');
+        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
         next();
     }

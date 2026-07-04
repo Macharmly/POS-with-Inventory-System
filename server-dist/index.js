@@ -40,7 +40,7 @@ app.get('/api/health', (req, res) => {
 ========================= */
 const clientPath = path_1.default.join(__dirname, '..', 'dist');
 app.use(express_1.default.static(clientPath));
-app.get('*', (req, res) => {
+app.get(/.*/, (req, res) => {
     res.sendFile(path_1.default.join(clientPath, 'index.html'));
 });
 /* =========================
