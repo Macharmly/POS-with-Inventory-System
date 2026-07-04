@@ -136,7 +136,7 @@ export default function ProductPerformanceReportPage() {
         const response =
           await axios.get(
 
-            'http://localhost:5000/api/reports/product-performance',
+            `${import.meta.env.VITE_API_URL || '/api'}/reports/product-performance`,
 
             {
               params: {
