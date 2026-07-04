@@ -1,0 +1,1327 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getServiceReport = exports.getProfitReport = exports.getSalesReport = exports.removeServiceProduct = exports.addServiceProduct = exports.getServiceProducts = exports.deleteService = exports.updateService = exports.createService = exports.getServices = exports.adjustInventory = exports.restockProduct = exports.getLowStockProducts = exports.getDashboardAnalytics = exports.getSaleDetails = exports.getSalesHistory = exports.checkout = void 0;
+const dbConnection_1 = __importDefault(require("../dbConnection"));
+const logActivity_1 = __importDefault(require("../utils/logActivity"));
+/* =========================
+   CHECKOUT
+========================= */
+const checkout = async (req, res) => {
+    const { business_id, user_id, items, total_amount, discount_amount, payment_method, cash_received, change_amount } = req.body;
+    // Validation
+    if (!items || items.length === 0) {
+        return res.status(400).json({
+            error: 'Cart is empty'
+        });
+    }
+    if (!user_id) {
+        return res.status(400).json({
+            error: 'User session identity missing.'
+        });
+    }
+    const db = await dbConnection_1.default
+        .promise()
+        .getConnection();
+    try {
+        await db.beginTransaction();
+        // Get Business Name
+        const [businessRows] = await db.query(`
+          SELECT
+            name,
+            address,
+            contact_number,
+            email,
+            tin_number,
+            tax_type,
+            receipt_footer
+          FROM businesses
+          WHERE id = ?
+        `, [business_id]);
+        if (businessRows.length === 0) {
+            throw new Error('Business not found');
+        }
+        const businessName = businessRows[0]
+            .name;
+        const business = businessRows[0];
+        // Generate Invoice Number
+        const invoiceNumber = `INV-${Date.now()}`;
+        // Create Sale
+        const salesSql = `
+
+      INSERT INTO sales (
+
+        business_id,
+        user_id,
+        invoice_number,
+        total_amount,
+        discount_amount,
+        payment_method,
+        cash_received,
+        change_amount
+
+      )
+
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+
+    `;
+        const [salesResult] = await db.query(salesSql, [
+            business_id,
+            user_id,
+            invoiceNumber,
+            total_amount,
+            discount_amount,
+            payment_method,
+            cash_received || 0,
+            change_amount || 0
+        ]);
+        const saleId = salesResult.insertId;
+        // Process Cart Items
+        for (const item of items) {
+            const itemType = item.item_type || 'product';
+            if (itemType === 'service') {
+                await db.query(`
+            INSERT INTO sale_items (
+
+              sale_id,
+              product_id,
+              service_id,
+              product_name,
+              quantity,
+              subtotal,
+              price_at_sale,
+              item_type
+
+            )
+
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+
+          `, [
+                    saleId,
+                    null,
+                    item.id,
+                    item.name,
+                    item.quantity,
+                    Number(item.service_price) * item.quantity,
+                    item.service_price,
+                    'service'
+                ]);
+                continue;
+            }
+            // Verify Product
+            const [productRows] = await db.query(`
+            SELECT
+              stock_quantity
+            FROM products
+            WHERE id = ?
+            AND business_id = ?
+          `, [
+                item.id,
+                business_id
+            ]);
+            if (productRows.length === 0) {
+                throw new Error(`Product ID ${item.id} not found`);
+            }
+            const currentStock = productRows[0]
+                .stock_quantity;
+            // Prevent Overselling
+            if (currentStock <
+                item.quantity) {
+                throw new Error(`Insufficient stock for product ID ${item.id}`);
+            }
+            // Insert Sale Item
+            const itemSql = `
+
+        INSERT INTO sale_items (
+
+          sale_id,
+          product_id,
+          product_name,
+          quantity,
+          subtotal,
+          price_at_sale,
+          item_type
+
+        )
+
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+
+      `;
+            await db.query(itemSql, [
+                saleId,
+                item.id,
+                item.name,
+                item.quantity,
+                Number(item.selling_price) *
+                    item.quantity,
+                item.selling_price,
+                'product'
+            ]);
+            // Deduct Stock
+            await db.query(`
+          UPDATE products
+          SET stock_quantity =
+            stock_quantity - ?
+          WHERE id = ?
+          AND business_id = ?
+        `, [
+                item.quantity,
+                item.id,
+                business_id
+            ]);
+            // Inventory Movement Log
+            const movementSql = `
+
+        INSERT INTO inventory_movements (
+
+          product_id,
+          business_id,
+          user_id,
+          movement_type,
+          quantity,
+          reference_id,
+          notes
+
+        )
+
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+
+      `;
+            await db.query(movementSql, [
+                item.id,
+                business_id,
+                user_id,
+                'SALE',
+                item.quantity,
+                saleId,
+                `Stock deducted from sale #${saleId}`
+            ]);
+        }
+        await db.commit();
+        await (0, logActivity_1.default)({
+            user_id,
+            business_id,
+            module: 'Sales',
+            action: 'CREATE_SALE',
+            description: `Created sale ${invoiceNumber} worth ₱${total_amount}`
+        });
+        res.status(200).json({
+            success: true,
+            message: 'Transaction completed successfully!',
+            receipt: {
+                saleId,
+                invoiceNumber,
+                businessName,
+                businessAddress: business.address,
+                businessContactNumber: business.contact_number,
+                businessEmail: business.email,
+                businessTinNumber: business.tin_number,
+                businessTaxType: business.tax_type,
+                receiptFooter: business.receipt_footer,
+                totalAmount: total_amount,
+                discountAmount: discount_amount || 0,
+                paymentMethod: payment_method,
+                cashReceived: cash_received || 0,
+                change: change_amount || 0,
+                createdAt: new Date(),
+                items
+            }
+        });
+    }
+    catch (error) {
+        await db.rollback();
+        console.error('❌ Transaction Failed:', error.message);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+    finally {
+        db.release();
+    }
+};
+exports.checkout = checkout;
+/* =========================
+   SALES HISTORY
+========================= */
+const getSalesHistory = async (req, res) => {
+    const { business_id, filter } = req.query;
+    try {
+        const sql = `
+
+      SELECT
+
+        sales.id,
+        sales.invoice_number,
+        sales.total_amount,
+        sales.discount_amount,
+        sales.payment_method,
+        sales.cash_received,
+        sales.change_amount,
+        sales.created_at,
+
+        users.name AS cashier_name
+
+      FROM sales
+
+      INNER JOIN users
+        ON sales.user_id = users.id
+
+      WHERE sales.business_id = ?
+
+      ORDER BY sales.created_at DESC
+
+    `;
+        const [results] = await dbConnection_1.default
+            .promise()
+            .query(sql, [business_id]);
+        res.status(200).json(results);
+    }
+    catch (error) {
+        console.error('❌ Sales History Error:', error.message);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.getSalesHistory = getSalesHistory;
+/* =========================
+   SALE DETAILS
+========================= */
+const getSaleDetails = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const saleSql = `
+
+      SELECT
+
+        sales.id,
+        sales.invoice_number,
+        sales.total_amount,
+        sales.discount_amount,
+        sales.payment_method,
+        sales.cash_received,
+        sales.change_amount,
+        sales.created_at,
+
+        users.name AS cashier_name,
+
+        businesses.name AS business_name,
+        businesses.address AS business_address,
+        businesses.contact_number AS business_contact_number,
+        businesses.email AS business_email,
+        businesses.tin_number AS business_tin_number,
+        businesses.tax_type AS business_tax_type,
+        businesses.receipt_footer AS receipt_footer
+
+      FROM sales
+
+      INNER JOIN users
+        ON sales.user_id = users.id
+
+      INNER JOIN businesses
+        ON sales.business_id = businesses.id
+
+      WHERE sales.id = ?
+
+    `;
+        const [saleRows] = await dbConnection_1.default
+            .promise()
+            .query(saleSql, [id]);
+        if (saleRows.length === 0) {
+            return res.status(404).json({
+                error: 'Sale not found'
+            });
+        }
+        const itemsSql = `
+
+      SELECT
+
+        sale_items.id,
+        sale_items.item_type,
+
+        sale_items.quantity,
+        sale_items.price_at_sale,
+
+        sale_items.product_name AS name
+
+      FROM sale_items
+
+      WHERE sale_items.sale_id = ?
+
+    `;
+        const [itemsRows] = await dbConnection_1.default
+            .promise()
+            .query(itemsSql, [id]);
+        res.status(200).json({
+            sale: saleRows[0],
+            items: itemsRows
+        });
+    }
+    catch (error) {
+        console.error('❌ Sale Details Error:', error.message);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.getSaleDetails = getSaleDetails;
+/* =========================
+   DASHBOARD ANALYTICS
+========================= */
+const getDashboardAnalytics = async (req, res) => {
+    const { business_id, filter } = req.query;
+    try {
+        // Total Sales
+        let dateFilter = '';
+        if (filter === 'daily') {
+            dateFilter =
+                'AND DATE(created_at) = CURDATE()';
+        }
+        else if (filter === 'weekly') {
+            dateFilter =
+                `
+          AND YEARWEEK(
+            created_at,
+            1
+          ) = YEARWEEK(
+            CURDATE(),
+            1
+          )
+        `;
+        }
+        else if (filter === 'monthly') {
+            dateFilter =
+                `
+          AND MONTH(created_at) =
+            MONTH(CURDATE())
+
+          AND YEAR(created_at) =
+            YEAR(CURDATE())
+        `;
+        }
+        const [salesCountRows] = await dbConnection_1.default
+            .promise()
+            .query(`
+            SELECT
+              COUNT(*) AS totalSales
+            FROM sales
+            WHERE business_id = ?
+            ${dateFilter}
+          `, [business_id]);
+        // Revenue
+        const [revenueRows] = await dbConnection_1.default
+            .promise()
+            .query(`
+            SELECT
+              IFNULL(
+                SUM(total_amount),
+                0
+              ) AS totalRevenue
+            FROM sales
+            WHERE business_id = ?
+            ${dateFilter}
+          `, [business_id]);
+        // Products
+        const [productsRows] = await dbConnection_1.default
+            .promise()
+            .query(`
+            SELECT
+              COUNT(*) AS totalProducts
+            FROM products
+            WHERE business_id = ?
+          `, [business_id]);
+        // Low Stock
+        const [lowStockRows] = await dbConnection_1.default
+            .promise()
+            .query(`
+            SELECT
+              COUNT(*) AS lowStockCount
+            FROM products
+            WHERE business_id = ?
+            AND stock_quantity <= 5
+          `, [business_id]);
+        // Recent Sales
+        const [recentSales] = await dbConnection_1.default
+            .promise()
+            .query(`
+            SELECT
+
+              invoice_number,
+              total_amount,
+              created_at
+
+            FROM sales
+
+            WHERE business_id = ?
+
+            ORDER BY created_at DESC
+
+            LIMIT 5
+          `, [business_id]);
+        res.status(200).json({
+            totalSales: salesCountRows[0]
+                .totalSales,
+            totalRevenue: revenueRows[0]
+                .totalRevenue,
+            totalProducts: productsRows[0]
+                .totalProducts,
+            lowStockCount: lowStockRows[0]
+                .lowStockCount,
+            recentSales
+        });
+    }
+    catch (error) {
+        console.error('❌ Dashboard Analytics Error:', error.message);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.getDashboardAnalytics = getDashboardAnalytics;
+/* =========================
+   LOW STOCK
+========================= */
+const getLowStockProducts = async (req, res) => {
+    const { business_id, filter } = req.query;
+    try {
+        const sql = `
+
+      SELECT
+
+        id,
+        name,
+        stock_quantity,
+        selling_price
+
+      FROM products
+
+      WHERE business_id = ?
+
+      AND stock_quantity <= 5
+
+      ORDER BY stock_quantity ASC
+
+    `;
+        const [results] = await dbConnection_1.default
+            .promise()
+            .query(sql, [business_id]);
+        res.status(200).json(results);
+    }
+    catch (error) {
+        console.error('❌ Low Stock Error:', error.message);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.getLowStockProducts = getLowStockProducts;
+/* =========================
+   RESTOCK
+========================= */
+const restockProduct = async (req, res) => {
+    const { product_id, quantity, user_id, business_id } = req.body;
+    if (!product_id ||
+        !quantity ||
+        quantity <= 0) {
+        return res.status(400).json({
+            error: 'Invalid restock data'
+        });
+    }
+    const db = await dbConnection_1.default
+        .promise()
+        .getConnection();
+    try {
+        await db.beginTransaction();
+        const [productRows] = await db.query(`
+          SELECT *
+          FROM products
+          WHERE id = ?
+          AND business_id = ?
+        `, [
+            product_id,
+            business_id
+        ]);
+        if (productRows.length === 0) {
+            throw new Error('Product not found');
+        }
+        await db.query(`
+        UPDATE products
+        SET stock_quantity =
+          stock_quantity + ?
+        WHERE id = ?
+        AND business_id = ?
+      `, [
+            quantity,
+            product_id,
+            business_id
+        ]);
+        await db.query(`
+        INSERT INTO inventory_movements (
+
+          product_id,
+          business_id,
+          user_id,
+          movement_type,
+          quantity,
+          notes
+
+        )
+
+        VALUES (?, ?, ?, ?, ?, ?)
+      `, [
+            product_id,
+            business_id,
+            user_id,
+            'RESTOCK',
+            quantity,
+            `Restocked ${quantity} units`
+        ]);
+        await db.commit();
+        await (0, logActivity_1.default)({
+            user_id,
+            business_id,
+            module: 'Inventory',
+            action: 'RESTOCK_PRODUCT',
+            description: `Restocked product ID ${product_id} with ${quantity} units`
+        });
+        res.status(200).json({
+            success: true,
+            message: 'Product restocked successfully'
+        });
+    }
+    catch (error) {
+        await db.rollback();
+        console.error('❌ Restock Error:', error.message);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+    finally {
+        db.release();
+    }
+};
+exports.restockProduct = restockProduct;
+/* =========================
+   INVENTORY ADJUSTMENT
+========================= */
+const adjustInventory = async (req, res) => {
+    const { product_id, adjustment_quantity, reason, user_id, business_id } = req.body;
+    if (!product_id ||
+        !adjustment_quantity ||
+        !reason) {
+        return res.status(400).json({
+            error: 'Missing required fields'
+        });
+    }
+    const db = await dbConnection_1.default
+        .promise()
+        .getConnection();
+    try {
+        await db.beginTransaction();
+        const [productRows] = await db.query(`
+          SELECT *
+          FROM products
+          WHERE id = ?
+          AND business_id = ?
+        `, [
+            product_id,
+            business_id
+        ]);
+        if (productRows.length === 0) {
+            throw new Error('Product not found');
+        }
+        const product = productRows[0];
+        const newStock = product.stock_quantity +
+            adjustment_quantity;
+        if (newStock < 0) {
+            throw new Error('Adjustment would create negative stock');
+        }
+        await db.query(`
+        UPDATE products
+        SET stock_quantity = ?
+        WHERE id = ?
+        AND business_id = ?
+      `, [
+            newStock,
+            product_id,
+            business_id
+        ]);
+        const movementType = adjustment_quantity > 0
+            ? 'ADJUSTMENT'
+            : 'DAMAGE';
+        await db.query(`
+        INSERT INTO inventory_movements (
+
+          product_id,
+          business_id,
+          user_id,
+          movement_type,
+          quantity,
+          notes
+
+        )
+
+        VALUES (?, ?, ?, ?, ?, ?)
+      `, [
+            product_id,
+            business_id,
+            user_id,
+            movementType,
+            Math.abs(adjustment_quantity),
+            reason
+        ]);
+        await db.commit();
+        await (0, logActivity_1.default)({
+            user_id,
+            business_id,
+            module: 'Inventory',
+            action: 'ADJUST_INVENTORY',
+            description: `Adjusted product ID ${product_id} by ${adjustment_quantity}`
+        });
+        res.status(200).json({
+            success: true,
+            message: 'Inventory adjusted successfully'
+        });
+    }
+    catch (error) {
+        await db.rollback();
+        console.error('❌ Inventory Adjustment Error:', error.message);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+    finally {
+        db.release();
+    }
+};
+exports.adjustInventory = adjustInventory;
+/* =========================
+   SERVICES
+========================= */
+const getServices = async (req, res) => {
+    const { business_id, startDate, endDate } = req.query;
+    try {
+        const [services] = await dbConnection_1.default
+            .promise()
+            .query(`
+          SELECT *
+          FROM services
+          WHERE business_id = ?
+          ORDER BY created_at DESC
+          `, [business_id]);
+        for (const service of services) {
+            const [products] = await dbConnection_1.default
+                .promise()
+                .query(`
+            SELECT
+
+              p.id,
+              p.name,
+              p.selling_price,
+              p.stock_quantity
+
+            FROM service_products sp
+
+            INNER JOIN products p
+              ON sp.product_id = p.id
+
+            WHERE sp.service_id = ?
+            `, [service.id]);
+            service.linked_products =
+                products || [];
+        }
+        res.status(200).json(services);
+    }
+    catch (error) {
+        console.error('❌ Services Fetch Error:', error.message);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.getServices = getServices;
+/* =========================
+   CREATE SERVICE
+========================= */
+const createService = async (req, res) => {
+    const { business_id, name, description, service_price } = req.body;
+    if (!business_id ||
+        !name ||
+        !service_price) {
+        return res.status(400).json({
+            error: 'Missing required fields'
+        });
+    }
+    try {
+        const sql = `
+
+      INSERT INTO services (
+
+        business_id,
+        name,
+        description,
+        service_price
+
+      )
+
+      VALUES (?, ?, ?, ?)
+
+    `;
+        await dbConnection_1.default
+            .promise()
+            .query(sql, [
+            business_id,
+            name,
+            description,
+            service_price
+        ]);
+        await (0, logActivity_1.default)({
+            user_id: req.body.user_id,
+            business_id,
+            module: 'Services',
+            action: 'CREATE_SERVICE',
+            description: `Created service: ${name}`
+        });
+        res.status(201).json({
+            success: true,
+            message: 'Service created successfully'
+        });
+    }
+    catch (error) {
+        console.error('❌ Service Creation Error:', error.message);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.createService = createService;
+/* =========================
+   UPDATE SERVICE
+========================= */
+const updateService = async (req, res) => {
+    const { id } = req.params;
+    const { name, description, service_price, user_id, business_id } = req.body;
+    if (!name ||
+        !service_price) {
+        return res.status(400).json({
+            error: 'Missing required fields'
+        });
+    }
+    try {
+        const sql = `
+
+      UPDATE services
+
+      SET
+        name = ?,
+        description = ?,
+        service_price = ?
+
+      WHERE id = ?
+
+    `;
+        const [result] = await dbConnection_1.default
+            .promise()
+            .query(sql, [
+            name,
+            description,
+            service_price,
+            id
+        ]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: 'Service not found'
+            });
+        }
+        await (0, logActivity_1.default)({
+            user_id,
+            business_id,
+            module: 'Services',
+            action: 'UPDATE_SERVICE',
+            description: `Updated service: ${name}`
+        });
+        res.status(200).json({
+            success: true,
+            message: 'Service updated successfully'
+        });
+    }
+    catch (error) {
+        console.error('❌ Service Update Error:', error.message);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.updateService = updateService;
+/* =========================
+   DELETE SERVICE
+========================= */
+const deleteService = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [serviceRows] = await dbConnection_1.default
+            .promise()
+            .query(`
+          SELECT *
+          FROM services
+          WHERE id = ?
+          `, [id]);
+        if (serviceRows.length === 0) {
+            return res.status(404).json({
+                error: 'Service not found'
+            });
+        }
+        const service = serviceRows[0];
+        const sql = `
+
+      DELETE FROM services
+
+      WHERE id = ?
+
+    `;
+        const [result] = await dbConnection_1.default
+            .promise()
+            .query(sql, [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: 'Service not found'
+            });
+        }
+        await (0, logActivity_1.default)({
+            user_id: req.body.user_id,
+            business_id: service.business_id,
+            module: 'Services',
+            action: 'DELETE_SERVICE',
+            description: `Deleted service: ${service.name}`
+        });
+        res.status(200).json({
+            success: true,
+            message: 'Service deleted successfully'
+        });
+    }
+    catch (error) {
+        console.error('❌ Service Delete Error:', error.message);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.deleteService = deleteService;
+/* =========================
+   PRODUCT and SERVICE MAPPING
+========================= */
+const getServiceProducts = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await dbConnection_1.default
+            .promise()
+            .query(`
+        SELECT
+
+          p.*
+
+        FROM service_products sp
+
+        INNER JOIN products p
+          ON sp.product_id = p.id
+
+        WHERE sp.service_id = ?
+        `, [id]);
+        res.json(rows);
+    }
+    catch (error) {
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.getServiceProducts = getServiceProducts;
+/* =========================
+   ADD PRODUCT and SERVICE MAPPING
+========================= */
+const addServiceProduct = async (req, res) => {
+    const { id } = req.params;
+    const { product_id, user_id } = req.body;
+    try {
+        await dbConnection_1.default
+            .promise()
+            .query(`
+          INSERT INTO service_products (
+
+            service_id,
+            product_id
+
+          )
+
+          VALUES (?, ?)
+          `, [
+            id,
+            product_id
+        ]);
+        const [serviceRows] = await dbConnection_1.default
+            .promise()
+            .query(`
+            SELECT
+              name,
+              business_id
+            FROM services
+            WHERE id = ?
+            `, [id]);
+        const [productRows] = await dbConnection_1.default
+            .promise()
+            .query(`
+            SELECT
+              name
+            FROM products
+            WHERE id = ?
+            `, [product_id]);
+        await (0, logActivity_1.default)({
+            user_id,
+            business_id: serviceRows[0]
+                .business_id,
+            module: 'Services',
+            action: 'LINK_PRODUCT_TO_SERVICE',
+            description: `Linked product "${productRows[0].name}" to service "${serviceRows[0].name}"`
+        });
+        res.json({
+            success: true
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.addServiceProduct = addServiceProduct;
+/* =========================
+   DELETE PRODUCT and SERVICE MAPPING
+========================= */
+const removeServiceProduct = async (req, res) => {
+    const { serviceId, productId } = req.params;
+    try {
+        const [serviceRows] = await dbConnection_1.default
+            .promise()
+            .query(`
+            SELECT
+              name,
+              business_id
+            FROM services
+            WHERE id = ?
+            `, [serviceId]);
+        const [productRows] = await dbConnection_1.default
+            .promise()
+            .query(`
+            SELECT
+              name
+            FROM products
+            WHERE id = ?
+            `, [productId]);
+        await dbConnection_1.default
+            .promise()
+            .query(`
+          DELETE FROM service_products
+
+          WHERE service_id = ?
+          AND product_id = ?
+          `, [
+            serviceId,
+            productId
+        ]);
+        await (0, logActivity_1.default)({
+            user_id: req.body.user_id,
+            business_id: serviceRows[0]
+                .business_id,
+            module: 'Services',
+            action: 'UNLINK_PRODUCT_FROM_SERVICE',
+            description: `Removed product "${productRows[0].name}" from service "${serviceRows[0].name}"`
+        });
+        res.json({
+            success: true
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.removeServiceProduct = removeServiceProduct;
+/* =========================
+   SALES REPORT
+========================= */
+const getSalesReport = async (req, res) => {
+    const { startDate, endDate, business_id } = req.query;
+    if (!startDate ||
+        !endDate) {
+        return res.status(400).json({
+            error: 'Start date and end date are required'
+        });
+    }
+    try {
+        const sql = `
+
+      SELECT
+
+        sales.id,
+        sales.invoice_number,
+        sales.total_amount,
+        sales.payment_method,
+        sales.created_at,
+
+        users.name AS cashier_name
+
+      FROM sales
+
+      INNER JOIN users
+        ON sales.user_id = users.id
+
+      WHERE sales.business_id = ?
+
+      AND DATE(sales.created_at)
+        BETWEEN ? AND ?
+
+      ORDER BY sales.created_at DESC
+
+    `;
+        const [rows] = await dbConnection_1.default
+            .promise()
+            .query(sql, [
+            business_id,
+            startDate,
+            endDate
+        ]);
+        const totalRevenue = rows.reduce((sum, sale) => sum +
+            Number(sale.total_amount), 0);
+        res.status(200).json({
+            totalTransactions: rows.length,
+            totalRevenue,
+            sales: rows
+        });
+    }
+    catch (error) {
+        console.error('❌ Sales Report Error:', error.message);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.getSalesReport = getSalesReport;
+/* =========================
+   PROFIT REPORT
+========================= */
+const getProfitReport = async (req, res) => {
+    try {
+        const { business_id } = req.query;
+        const businessId = Number(business_id);
+        if (!businessId) {
+            return res.status(400).json({
+                error: 'Business ID is required'
+            });
+        }
+        const [rows] = await dbConnection_1.default
+            .promise()
+            .query(`
+          SELECT
+
+            si.product_id,
+
+            COALESCE(
+              si.product_name,
+              p.name
+            ) AS product_name,
+
+            SUM(si.quantity)
+              AS quantity_sold,
+
+            SUM(si.price_at_sale * si.quantity)
+              AS revenue,
+
+            SUM(p.cost_price * si.quantity)
+              AS cost,
+
+            SUM(
+              (si.price_at_sale - p.cost_price)
+              * si.quantity
+            ) AS profit
+
+          FROM sale_items si
+
+          LEFT JOIN products p
+            ON si.product_id = p.id
+
+          LEFT JOIN sales s
+            ON si.sale_id = s.id
+
+          WHERE s.business_id = ?
+
+          AND si.item_type = 'product'
+
+          GROUP BY
+            si.product_id,
+            si.product_name,
+            p.name
+
+          ORDER BY quantity_sold DESC
+          `, [businessId]);
+        res.json(rows);
+    }
+    catch (error) {
+        console.error('❌ Profit Report Error:', error.message);
+        res.status(500).json({
+            error: 'Failed to fetch profit report.'
+        });
+    }
+};
+exports.getProfitReport = getProfitReport;
+/* =========================
+   SERVICE REPORT
+========================= */
+const getServiceReport = async (req, res) => {
+    const { business_id, startDate, endDate } = req.query;
+    try {
+        /* =========================
+           SERVICE PERFORMANCE
+        ========================= */
+        const [services] = await dbConnection_1.default
+            .promise()
+            .query(`
+          SELECT
+
+            si.service_id,
+
+            si.product_name
+              AS service_name,
+
+            SUM(si.quantity)
+              AS total_availed,
+
+            SUM(si.subtotal)
+              AS total_revenue,
+
+            ROUND(
+              SUM(si.subtotal)
+              /
+              NULLIF(
+                SUM(si.quantity),
+                0
+              ),
+              2
+            ) AS average_revenue
+
+          FROM sale_items si
+
+          INNER JOIN sales s
+            ON si.sale_id = s.id
+
+          WHERE
+            si.item_type = 'service'
+
+          AND
+            s.business_id = ?
+
+          AND (
+
+            ? IS NULL
+
+            OR
+
+            DATE(s.created_at)
+              BETWEEN ? AND ?
+
+          )
+
+          GROUP BY
+            si.service_id,
+            si.product_name
+
+          ORDER BY
+            total_availed DESC
+          `, [
+            business_id,
+            startDate || null,
+            startDate || null,
+            endDate || null
+        ]);
+        const totalRevenue = services.reduce((sum, service) => sum +
+            Number(service.total_revenue), 0);
+        const totalTransactions = services.reduce((sum, service) => sum +
+            Number(service.total_availed), 0);
+        const averageRevenue = totalTransactions > 0
+            ? totalRevenue /
+                totalTransactions
+            : 0;
+        const topService = services.length > 0
+            ? services[0]
+            : null;
+        const topRevenueService = services.length > 0
+            ? [...services]
+                .sort((a, b) => Number(b.total_revenue) -
+                Number(a.total_revenue))[0]
+            : null;
+        /* =========================
+           SERVICE PRODUCTS
+        ========================= */
+        const [serviceProducts] = await dbConnection_1.default
+            .promise()
+            .query(`
+          SELECT
+
+            s.id
+              AS service_id,
+
+            s.name
+              AS service_name,
+
+            COALESCE(
+
+              GROUP_CONCAT(
+                p.name
+                SEPARATOR ', '
+              ),
+
+              'No linked products'
+
+            ) AS products
+
+          FROM services s
+
+          LEFT JOIN service_products sp
+            ON s.id = sp.service_id
+
+          LEFT JOIN products p
+            ON sp.product_id = p.id
+
+          WHERE
+            s.business_id = ?
+
+          GROUP BY
+            s.id,
+            s.name
+
+          ORDER BY
+            s.name
+          `, [business_id]);
+        const totalServices = serviceProducts.length;
+        res.json({
+            totalRevenue,
+            totalTransactions,
+            totalServices,
+            averageRevenue,
+            topService,
+            topRevenueService,
+            services,
+            serviceProducts
+        });
+    }
+    catch (error) {
+        console.error('❌ Service Report Error:', error.message);
+        res.status(500).json({
+            error: error.message
+        });
+    }
+};
+exports.getServiceReport = getServiceReport;

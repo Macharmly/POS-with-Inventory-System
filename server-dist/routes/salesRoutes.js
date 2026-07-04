@@ -1,0 +1,26 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const salesController_1 = require("../controllers/salesController");
+const router = express_1.default.Router();
+router.post('/checkout', salesController_1.checkout);
+router.get('/sales-history', salesController_1.getSalesHistory);
+router.get('/sales/:id', salesController_1.getSaleDetails);
+router.get('/dashboard-analytics', salesController_1.getDashboardAnalytics);
+router.get('/low-stock', salesController_1.getLowStockProducts);
+router.post('/restock', salesController_1.restockProduct);
+router.post('/adjust-inventory', salesController_1.adjustInventory);
+router.get('/services', salesController_1.getServices);
+router.post('/services', salesController_1.createService);
+router.put('/services/:id', salesController_1.updateService);
+router.delete('/services/:id', salesController_1.deleteService);
+router.get('/services/:id/products', salesController_1.getServiceProducts);
+router.post('/services/:id/products', salesController_1.addServiceProduct);
+router.delete('/services/:serviceId/products/:productId', salesController_1.removeServiceProduct);
+router.get('/reports/sales', salesController_1.getSalesReport);
+router.get('/reports/profit', salesController_1.getProfitReport);
+router.get('/reports/services', salesController_1.getServiceReport);
+exports.default = router;
