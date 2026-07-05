@@ -9,13 +9,16 @@ import {
   updateProduct,
   deleteProduct,
   getDropdownOptions,
-  createDropdownOption
+  createDropdownOption,
+  getInventoryMovements
 } from '../controllers/productController';
 
 const router = express.Router();
 
 router.get('/dropdowns/:type', getDropdownOptions);
 router.post('/dropdowns/:type', authenticateToken, createDropdownOption);
+
+router.get('/inventory-movements', getInventoryMovements);
 
 router.get('/', getProducts);
 router.post('/', authenticateToken, createProduct);

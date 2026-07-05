@@ -14,7 +14,8 @@ import {
   updateProduct,
   deleteProduct,
   fetchDropdownOptions,
-  createDropdownOption
+  createDropdownOption,
+  fetchInventoryMovements
 } from '../services/productService';
 
 interface Product {
@@ -32,6 +33,20 @@ interface Product {
   selling_price: number;
   stock_quantity: number;
   low_stock_threshold: number;
+}
+
+interface InventoryMovement {
+  id: number;
+  product_id: number;
+  business_id: number;
+  user_id: number;
+  movement_type: string;
+  quantity: number;
+  reference_id: number | null;
+  notes: string | null;
+  created_at: string;
+  product_name: string;
+  user_name: string;
 }
 
 export default function InventoryPage() {
@@ -66,6 +81,9 @@ export default function InventoryPage() {
       stock_quantity: '',
       low_stock_threshold: ''
     });
+
+  const [inventoryMovements, setInventoryMovements] =
+    useState<InventoryMovement[]>([]);
   
   const [showEditModal, setShowEditModal] =
     useState(false);
@@ -102,6 +120,9 @@ export default function InventoryPage() {
     useState<any[]>([]);
 
   const [searchTerm, setSearchTerm] =
+    useState('');
+  
+  const [movementSearchTerm, setMovementSearchTerm] =
     useState('');
 
   const [optionModal, setOptionModal] =
@@ -164,6 +185,13 @@ export default function InventoryPage() {
           )
         );
 
+        const movementData =
+          await fetchInventoryMovements(
+            businessId
+          );
+
+        setInventoryMovements(movementData);
+
       } catch (error) {
 
         console.error(
@@ -210,6 +238,37 @@ export default function InventoryPage() {
         .toString()
         .includes(searchTerm)
     );
+  
+  const filteredInventoryMovements =
+    inventoryMovements.filter((movement) => {
+      const search =
+        movementSearchTerm.toLowerCase();
+
+      const formattedDate =
+        new Date(movement.created_at)
+          .toLocaleString()
+          .toLowerCase();
+
+      return (
+        formattedDate.includes(search) ||
+
+        movement.product_name
+          ?.toLowerCase()
+          .includes(search) ||
+
+        movement.movement_type
+          ?.toLowerCase()
+          .includes(search) ||
+
+        movement.user_name
+          ?.toLowerCase()
+          .includes(search) ||
+
+        movement.notes
+          ?.toLowerCase()
+          .includes(search)
+      );
+    });
 
   const handleAddProduct = async (
     e: React.FormEvent
@@ -258,6 +317,13 @@ export default function InventoryPage() {
         );
 
       setProducts(updatedProducts);
+
+      const updatedMovements =
+        await fetchInventoryMovements(
+          Number(user?.business_id)
+        );
+
+      setInventoryMovements(updatedMovements);
 
       alert('Product added successfully!');
 
@@ -490,6 +556,13 @@ export default function InventoryPage() {
 
     setProducts(updatedProducts);
 
+    const updatedMovements =
+      await fetchInventoryMovements(
+        Number(user?.business_id)
+      );
+
+    setInventoryMovements(updatedMovements);
+
     setShowEditModal(false);
     setEditingProductId(null);
 
@@ -520,30 +593,15 @@ export default function InventoryPage() {
 
     setProducts(updatedProducts);
 
+    const updatedMovements =
+      await fetchInventoryMovements(
+        Number(user?.business_id)
+      );
+
+    setInventoryMovements(updatedMovements);
+
     alert('Product deleted successfully!');
   };
-
-  const FieldLabel = ({
-    children,
-    required = false
-  }: {
-    children: React.ReactNode;
-    required?: boolean;
-  }) => (
-    <label className="
-      block
-      text-sm
-      font-medium
-      mb-1
-      text-zinc-700
-      dark:text-zinc-300
-    ">
-      {children}
-      {required && (
-        <span className="text-red-500 ml-1">*</span>
-      )}
-    </label>
-  );
 
   if (loading) {
 
@@ -1412,11 +1470,16 @@ export default function InventoryPage() {
 
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[600px]">
 
             <table className="min-w-full">
 
               <thead className="
+                sticky
+                top-0
+                z-10
+                bg-white
+                dark:bg-zinc-900
                 border-b
                 border-zinc-200
                 dark:border-zinc-800
@@ -1823,6 +1886,204 @@ export default function InventoryPage() {
 
           </div>
 
+        </div>
+
+        {/* Recent Inventory Movements */}
+
+        <div className="
+          bg-white
+          dark:bg-zinc-900
+          border
+          border-zinc-200
+          dark:border-zinc-800
+          rounded-lg
+          shadow-sm
+          overflow-hidden
+        ">
+          <div className="
+            px-6
+            py-5
+            border-b
+            border-zinc-200
+            dark:border-zinc-800
+            flex
+            flex-col
+            md:flex-row
+            md:items-center
+            md:justify-between
+            gap-4
+          ">
+          <div>
+            <h2 className="text-lg font-semibold">
+              Recent Inventory Movements
+            </h2>
+
+            <p className="
+              text-sm
+              text-zinc-500
+              dark:text-zinc-400
+              mt-1
+            ">
+              View the latest stock changes from sales, restocks, and adjustments.
+            </p>
+          </div>
+
+          <input
+            type="text"
+            placeholder="Search movements, product, user, notes..."
+            value={movementSearchTerm}
+            onChange={(e) =>
+              setMovementSearchTerm(e.target.value)
+            }
+            className="
+              w-full
+              md:w-80
+              border
+              border-zinc-300
+              dark:border-zinc-700
+              rounded-md
+              px-4
+              py-2
+              bg-transparent
+              text-sm
+            "
+          />
+        </div>
+
+          <div className="overflow-auto max-h-[420px]">
+            <table className="min-w-full">
+              <thead className="
+                sticky
+                top-0
+                z-10
+                bg-white
+                dark:bg-zinc-900
+                border-b
+                border-zinc-200
+                dark:border-zinc-800
+              ">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                    Date
+                  </th>
+
+                  <th className="px-6 py-4 text-left text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                    Product
+                  </th>
+
+                  <th className="px-6 py-4 text-left text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                    Movement
+                  </th>
+
+                  <th className="px-6 py-4 text-left text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                    Quantity
+                  </th>
+
+                  <th className="px-6 py-4 text-left text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                    Performed By
+                  </th>
+
+                  <th className="px-6 py-4 text-left text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                    Notes
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredInventoryMovements.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="
+                        px-6
+                        py-10
+                        text-center
+                        text-zinc-500
+                        dark:text-zinc-400
+                      "
+                    >
+                      No inventory movements found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredInventoryMovements.map((movement) => {
+                    const isIncoming =
+                      movement.movement_type === 'RESTOCK' ||
+                      movement.movement_type === 'RETURN';
+
+                    return (
+                      <tr
+                        key={movement.id}
+                        className="
+                          border-b
+                          border-zinc-100
+                          dark:border-zinc-800
+                          hover:bg-zinc-50
+                          dark:hover:bg-zinc-800/50
+                          transition
+                        "
+                      >
+                        <td className="px-6 py-4 text-sm">
+                          {new Date(
+                            movement.created_at
+                          ).toLocaleString()}
+                        </td>
+
+                        <td className="px-6 py-4 font-medium">
+                          {movement.product_name || 'Unknown Product'}
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <span className="
+                            inline-flex
+                            items-center
+                            px-3
+                            py-1
+                            rounded-md
+                            text-xs
+                            font-medium
+                            bg-zinc-100
+                            dark:bg-zinc-800
+                            text-zinc-700
+                            dark:text-zinc-300
+                          ">
+                            {movement.movement_type}
+                          </span>
+                        </td>
+
+                        <td className={`
+                          px-6
+                          py-4
+                          font-semibold
+                          ${
+                            isIncoming
+                              ? 'text-emerald-600'
+                              : 'text-red-600'
+                          }
+                        `}>
+                          {isIncoming ? '+' : '-'}
+                          {Math.abs(Number(movement.quantity))}
+                        </td>
+
+                        <td className="px-6 py-4">
+                          {movement.user_name || 'Unknown User'}
+                        </td>
+
+                        <td className="
+                          px-6
+                          py-4
+                          text-zinc-500
+                          dark:text-zinc-400
+                        ">
+                          {movement.notes || 'N/A'}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
       </div>

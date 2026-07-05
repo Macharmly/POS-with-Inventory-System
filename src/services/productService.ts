@@ -87,3 +87,18 @@ export const deleteProduct = async (
 
   return response.data;
 };
+
+export const fetchInventoryMovements = async (
+  business_id: number
+) => {
+  const response = await api.get(
+    '/products/inventory-movements',
+    {
+      params: {
+        business_id
+      }
+    }
+  );
+
+  return response.data;
+};

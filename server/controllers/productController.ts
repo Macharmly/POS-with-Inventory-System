@@ -564,3 +564,47 @@ export const createDropdownOption = async (
   }
 
 };
+
+export const getInventoryMovements = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  const { business_id } = req.query;
+
+  try {
+    const [rows]: any =
+      await connection
+        .promise()
+        .query(
+          `
+          SELECT
+            im.id,
+            im.product_id,
+            im.business_id,
+            im.user_id,
+            im.movement_type,
+            im.quantity,
+            im.reference_id,
+            im.notes,
+            im.created_at,
+            p.name AS product_name,
+            u.name AS user_name
+          FROM inventory_movements im
+          LEFT JOIN products p
+            ON im.product_id = p.id
+          LEFT JOIN users u
+            ON im.user_id = u.id
+          WHERE im.business_id = ?
+          ORDER BY im.created_at DESC
+          LIMIT 50
+          `,
+          [business_id]
+        );
+
+    res.json(rows);
+  } catch (error: any) {
+    res.status(500).json({
+      error: error.message
+    });
+  }
+};
