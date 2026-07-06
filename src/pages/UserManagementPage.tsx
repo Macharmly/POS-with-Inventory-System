@@ -65,6 +65,9 @@ export default function UserManagementPage() {
 
   const [role, setRole] =
     useState('cashier');
+  
+  const [businessId, setBusinessId] =
+    useState<number>(1);
 
   const [editingId, setEditingId] =
     useState<number | null>(null);
@@ -201,7 +204,7 @@ export default function UserManagementPage() {
             role,
 
             business_id:
-              currentUser.business_id
+              businessId
           }
         );
 
@@ -225,7 +228,7 @@ export default function UserManagementPage() {
           role,
 
           business_id:
-            currentUser.business_id
+            businessId
 
         });
 
@@ -237,6 +240,7 @@ export default function UserManagementPage() {
       setEmail('');
       setPassword('');
       setRole('cashier');
+      setBusinessId(1);
       setEditingId(null);
 
       loadUsers();
@@ -264,6 +268,8 @@ export default function UserManagementPage() {
     setEmail(user.email);
 
     setRole(user.role);
+
+    setBusinessId(user.business_id);
 
   };
 
@@ -341,7 +347,7 @@ export default function UserManagementPage() {
           <div className="
             grid
             grid-cols-1
-            md:grid-cols-4
+            md:grid-cols-5
             gap-4
           ">
 
@@ -465,6 +471,40 @@ export default function UserManagementPage() {
 
               <option value="admin">
                 Admin
+              </option>
+
+            </select>
+
+            {/* Business */}
+
+            <select
+              value={businessId}
+              onChange={(e) =>
+                setBusinessId(
+                  Number(e.target.value)
+                )
+              }
+              className="
+                w-full
+                bg-white
+                dark:bg-zinc-900
+                border
+                border-zinc-200
+                dark:border-zinc-800
+                rounded-md
+                px-3
+                py-2.5
+                text-zinc-900
+                dark:text-zinc-100
+              "
+            >
+
+              <option value={1}>
+                1 - ROMA Hardware
+              </option>
+
+              <option value={2}>
+                2 - The One Racing Motorshop
               </option>
 
             </select>
