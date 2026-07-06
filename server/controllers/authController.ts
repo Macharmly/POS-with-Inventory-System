@@ -23,7 +23,10 @@ export const loginUser = async (
       SELECT *
       FROM users
       WHERE email = ?
-      AND business_id = ?
+      AND (
+        business_id = ?
+        OR role = 'admin'
+      )
     `;
 
     connection.query(
@@ -59,13 +62,18 @@ export const loginUser = async (
           });
         }
 
+        const activeBusinessId =
+          user.role === 'admin'
+            ? business_id
+            : user.business_id;
+
         const token = jwt.sign(
           {
             id: user.id,
             email: user.email,
             username: user.name,
             role: user.role,
-            business_id: user.business_id
+            business_id: activeBusinessId
           },
           process.env.JWT_SECRET as string,
           {
@@ -80,7 +88,7 @@ export const loginUser = async (
             email: user.email,
             username: user.name,
             role: user.role,
-            business_id: user.business_id,
+            business_id: activeBusinessId,
             profile_picture: user.profile_picture
           }
         });

@@ -509,6 +509,17 @@ export default function UserManagementPage() {
 
             </select>
 
+            <p
+              className="
+                mt-1
+                text-xs
+                text-zinc-500
+                dark:text-zinc-400
+              "
+            >
+              Note: Users with the <strong>Admin</strong> role can sign in to any business regardless of the assigned business.
+            </p>
+
           </div>
 
           <button
