@@ -196,15 +196,19 @@ export const createProduct = async (
 
   } catch (error: any) {
 
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({
+        error: 'A product with this SKU/Barcode already exists for this business.'
+      });
+    }
+
     console.error(
       '❌ Create Product Error:',
       error
     );
 
     return res.status(500).json({
-      error: error.message,
-      sqlMessage: error.sqlMessage,
-      code: error.code
+      error: 'Failed to create product.'
     });
 
   }
@@ -342,13 +346,19 @@ export const updateProduct = async (
 
   } catch (error: any) {
 
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({
+        error: 'Another product with this SKU/Barcode already exists for this business.'
+      });
+    }
+
     console.error(
       '❌ Update Product Error:',
-      error.message
+      error
     );
 
     return res.status(500).json({
-      error: 'Failed to update product'
+      error: 'Failed to update product.'
     });
 
   }

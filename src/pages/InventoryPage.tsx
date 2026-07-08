@@ -344,12 +344,18 @@ export default function InventoryPage() {
         low_stock_threshold: ''
       });
 
-    } catch (error) {
+    } catch (error: any) {
 
       console.error(
         'Failed to add product',
         error
       );
+
+      const message =
+        error.response?.data?.error ||
+        'Failed to add product. Please try again.';
+
+      alert(message);
 
     }
   };
@@ -527,46 +533,63 @@ export default function InventoryPage() {
       return;
     }
 
-    await updateProduct(
-      editingProductId,
-      {
-        business_id: Number(user?.business_id),
-        name: editProduct.name,
-        sku_barcode: editProduct.sku_barcode,
-        category: editProduct.category,
-        brand: editProduct.brand,
-        supplier: editProduct.supplier,
-        unit_type: editProduct.unit_type,
-        description: editProduct.description,
-        status: editProduct.status,
-        cost_price: Number(editProduct.cost_price),
-        selling_price: Number(editProduct.selling_price),
-        stock_quantity: Number(editProduct.stock_quantity),
-        low_stock_threshold:
-          editProduct.low_stock_threshold
-            ? Number(editProduct.low_stock_threshold)
-            : undefined
-      }
-    );
+    try {
 
-    const updatedProducts =
-      await fetchProducts(
-        Number(user?.business_id)
+      await updateProduct(
+        editingProductId,
+        {
+          business_id: Number(user?.business_id),
+          name: editProduct.name,
+          sku_barcode: editProduct.sku_barcode,
+          category: editProduct.category,
+          brand: editProduct.brand,
+          supplier: editProduct.supplier,
+          unit_type: editProduct.unit_type,
+          description: editProduct.description,
+          status: editProduct.status,
+          cost_price: Number(editProduct.cost_price),
+          selling_price: Number(editProduct.selling_price),
+          stock_quantity: Number(editProduct.stock_quantity),
+          low_stock_threshold:
+            editProduct.low_stock_threshold
+              ? Number(editProduct.low_stock_threshold)
+              : undefined
+        }
       );
 
-    setProducts(updatedProducts);
+      const updatedProducts =
+        await fetchProducts(
+          Number(user?.business_id)
+        );
 
-    const updatedMovements =
-      await fetchInventoryMovements(
-        Number(user?.business_id)
+      setProducts(updatedProducts);
+
+      const updatedMovements =
+        await fetchInventoryMovements(
+          Number(user?.business_id)
+        );
+
+      setInventoryMovements(updatedMovements);
+
+      setShowEditModal(false);
+      setEditingProductId(null);
+
+      alert('Product updated successfully!');
+
+    } catch (error: any) {
+
+      console.error(
+        'Failed to update product',
+        error
       );
 
-    setInventoryMovements(updatedMovements);
+      const message =
+        error.response?.data?.error ||
+        'Failed to update product. Please try again.';
 
-    setShowEditModal(false);
-    setEditingProductId(null);
+      alert(message);
 
-    alert('Product updated successfully!');
+    }
   };
 
   const handleDeleteProduct = async (
