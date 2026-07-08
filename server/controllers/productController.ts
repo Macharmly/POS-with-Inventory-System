@@ -171,14 +171,23 @@ export const createProduct = async (
           ]
         );
 
-    await logActivity({
-      user_id: req.user!.id,
-      business_id,
-      module: 'Inventory',
-      action: 'CREATE_PRODUCT',
-      description:
-        `Created product "${name}" with SKU/Barcode "${sku_barcode}" and initial stock of ${stock_quantity}`
-    });
+    try {
+      if (req.user?.id) {
+        await logActivity({
+          user_id: req.user.id,
+          business_id,
+          module: 'Inventory',
+          action: 'CREATE_PRODUCT',
+          description:
+            `Created product "${name}" with SKU/Barcode "${sku_barcode}" and initial stock of ${stock_quantity}`
+        });
+      }
+    } catch (logError: any) {
+      console.error(
+        '⚠️ Product created but activity log failed:',
+        logError.message
+      );
+    }
 
     return res.status(201).json({
       message: 'Product created successfully',
@@ -189,11 +198,13 @@ export const createProduct = async (
 
     console.error(
       '❌ Create Product Error:',
-      error.message
+      error
     );
 
     return res.status(500).json({
-      error: 'Failed to create product'
+      error: error.message,
+      sqlMessage: error.sqlMessage,
+      code: error.code
     });
 
   }
