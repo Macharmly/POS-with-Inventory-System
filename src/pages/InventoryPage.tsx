@@ -325,8 +325,6 @@ export default function InventoryPage() {
 
       setInventoryMovements(updatedMovements);
 
-      alert('Product added successfully!');
-
       setShowAddModal(false);
 
       setNewProduct({
