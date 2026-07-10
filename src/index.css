@@ -16,3 +16,46 @@ body {
 .print-only {
   display: none;
 }
+
+@keyframes fadePrompt {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+
+  15% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  80% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+}
+
+@keyframes flyToCart {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translate(
+        calc(-50% + var(--fly-x)),
+        calc(-50% + var(--fly-y))
+      )
+      scale(0.35);
+  }
+}

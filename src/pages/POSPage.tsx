@@ -1,4 +1,8 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState
+} from 'react';
 
 import {
   ShoppingCart,
@@ -50,6 +54,28 @@ export default function POSPage() {
 
   const [message, setMessage] =
     useState('');
+
+  const [toast, setToast] =
+    useState<{
+      message: string;
+      type: 'success' | 'error';
+    } | null>(null);
+
+  const toastTimeoutRef =
+    useRef<number | null>(null);
+
+  const [flyItems, setFlyItems] =
+    useState<{
+      id: number;
+      startX: number;
+      startY: number;
+      endX: number;
+      endY: number;
+      name: string;
+    }[]>([]);
+  
+  const cartButtonRef =
+    useRef<HTMLButtonElement | null>(null);
 
   const [receipt, setReceipt] =
     useState<any>(null);
@@ -144,27 +170,102 @@ export default function POSPage() {
 
       product.name
         .toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
+        .includes(search.toLowerCase())
 
       ||
 
       product.sku_barcode
         ?.toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
+        .includes(search.toLowerCase())
 
       ||
 
       product.category
         ?.toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
+        .includes(search.toLowerCase())
+
+      ||
+
+      product.brand
+        ?.toLowerCase()
+        .includes(search.toLowerCase())
 
     );
+
+  const toastAnimationRef =
+    useRef<number | null>(null);
+
+  const showToast = (
+    message: string,
+    type: 'success' | 'error' = 'success'
+  ) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    if (toastAnimationRef.current) {
+      clearTimeout(toastAnimationRef.current);
+    }
+
+    setToast(null);
+
+    toastAnimationRef.current =
+      window.setTimeout(() => {
+
+        setToast({
+          message,
+          type
+        });
+
+        toastTimeoutRef.current =
+          window.setTimeout(() => {
+            setToast(null);
+          }, 2500);
+
+      }, 50);
+  };
+
+  const triggerFlyToCart = (
+    e: React.MouseEvent,
+    name: string
+  ) => {
+    if (window.innerWidth >= 1024) {
+      return;
+    }
+
+    const itemRect =
+      e.currentTarget.getBoundingClientRect();
+
+    const cartRect =
+      cartButtonRef.current?.getBoundingClientRect();
+
+    if (!cartRect) {
+      return;
+    }
+
+    const id =
+      Date.now() + Math.random();
+
+    const newFlyItem = {
+      id,
+      startX: itemRect.left + itemRect.width / 2,
+      startY: itemRect.top + itemRect.height / 2,
+      endX: cartRect.left + cartRect.width / 2,
+      endY: cartRect.top + cartRect.height / 2,
+      name
+    };
+
+    setFlyItems((prev) => [
+      ...prev,
+      newFlyItem
+    ]);
+
+    window.setTimeout(() => {
+      setFlyItems((prev) =>
+        prev.filter((item) => item.id !== id)
+      );
+    }, 700);
+  };
 
   const addToCart = (
     product: Product
@@ -210,6 +311,8 @@ export default function POSPage() {
 
       }
 
+      showToast('Added to cart');
+
       return [
         {
           ...product,
@@ -243,6 +346,8 @@ export default function POSPage() {
 
       if (existing) {
 
+        showToast('Added to cart.');
+
         return prevCart.map(
           (item) =>
 
@@ -260,6 +365,8 @@ export default function POSPage() {
         );
 
       }
+
+      showToast('Added to cart.');
 
       return [
 
@@ -297,6 +404,12 @@ export default function POSPage() {
           item.item_type === itemType
         )
       )
+    );
+
+    showToast(
+      itemType === 'service'
+        ? 'Service removed from cart.'
+        : 'Product removed from cart.'
     );
 
   };
@@ -584,9 +697,11 @@ export default function POSPage() {
       <div
         className="
           flex-1
+          min-h-0
           mt-4
           overflow-y-auto
           space-y-4
+          pr-1
         "
       >
 
@@ -652,14 +767,44 @@ export default function POSPage() {
 
                   </span>
 
-                  <p
-                    className="
-                      font-medium
-                      truncate
-                    "
-                  >
-                    {item.name}
-                  </p>
+                  <div className="min-w-0">
+
+                    <p
+                      className="
+                        font-medium
+                        truncate
+                      "
+                    >
+                      {item.name}
+                    </p>
+
+                    {item.item_type === 'product' && (
+                      <>
+                        <p
+                          className="
+                            text-xs
+                            text-zinc-500
+                            dark:text-zinc-400
+                            truncate
+                          "
+                        >
+                          SKU: {item.sku_barcode || 'N/A'}
+                        </p>
+
+                        <p
+                          className="
+                            text-xs
+                            text-zinc-500
+                            dark:text-zinc-400
+                            truncate
+                          "
+                        >
+                          Brand: {item.brand || 'N/A'}
+                        </p>
+                      </>
+                    )}
+
+                  </div>
 
                 </div>
 
@@ -764,6 +909,11 @@ export default function POSPage() {
                         )
                     );
 
+                    showToast(
+                      'Removed from cart.',
+                      'error'
+                    );
+
                   }}
                   className="
                     h-7
@@ -800,13 +950,9 @@ export default function POSPage() {
                   onClick={() => {
 
                     if (
-
                       item.item_type === 'product' &&
-
                       item.stock_quantity !== undefined &&
-
                       item.quantity >= item.stock_quantity
-
                     ) {
 
                       alert(
@@ -816,6 +962,8 @@ export default function POSPage() {
                       return;
 
                     }
+
+                    showToast('Added to cart.');
 
                     setCart((prevCart) =>
                       prevCart.map(
@@ -1264,6 +1412,35 @@ export default function POSPage() {
 
     <AppLayout>
 
+      {toast && (
+        <div
+          className={`
+            fixed
+            top-5
+            left-1/2
+            z-[100]
+            backdrop-blur-md
+            border
+            text-white
+            px-5
+            py-3
+            rounded-lg
+            shadow-xl
+            text-sm
+            font-medium
+            animate-[fadePrompt_2.5s_ease-in-out_forwards]
+
+            ${
+              toast.type === 'success'
+                ? 'bg-emerald-600/95 border-emerald-500'
+                : 'bg-red-600/95 border-red-500'
+            }
+          `}
+        >
+          {toast.type === 'success' ? '✅' : '🗑️'} {toast.message}
+        </div>
+      )}
+
       <div className="space-y-6">
 
         {/* Header */}
@@ -1335,7 +1512,7 @@ export default function POSPage() {
 
               <input
                 type="text"
-                placeholder="Search by product, SKU, or category..."
+                placeholder="Search by product, SKU, brand, or category..."
                 value={search}
                 onChange={(e) =>
                   setSearch(
@@ -1377,6 +1554,7 @@ export default function POSPage() {
 
                     <button
                       key={service.id}
+                      type="button"
                       onClick={() =>
                         addServiceToCart(
                           service
@@ -1541,15 +1719,22 @@ export default function POSPage() {
                         {product.name}
                       </h3>
 
-                      <p
-                        className="
-                          text-xs
-                          text-zinc-500
-                          dark:text-zinc-400
-                          mt-1
-                        "
-                      >
-                        {product.sku_barcode}
+                      <p className="
+                        text-xs
+                        text-zinc-500
+                        dark:text-zinc-400
+                        mt-1
+                      ">
+                        SKU: {product.sku_barcode}
+                      </p>
+
+                      <p className="
+                        text-xs
+                        text-zinc-500
+                        dark:text-zinc-400
+                        mt-1
+                      ">
+                        Brand: {product.brand || 'N/A'}
                       </p>
 
                     </div>
@@ -1704,6 +1889,129 @@ export default function POSPage() {
 
             </div>
 
+            {user?.business_id === 2 &&
+            services.length > 0 && (
+
+              <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+
+                <h2 className="text-lg font-semibold mb-4">
+                  Services
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                  {services.map((service) => (
+
+                    <button
+                      key={service.id}
+                      onClick={(e) => {
+                        triggerFlyToCart(e, service.name);
+                        addServiceToCart(service);
+                      }}
+                      className="
+                        border
+                        border-blue-200
+                        dark:border-blue-900
+                        rounded-2xl
+                        p-4
+                        text-left
+                        transition
+                        hover:bg-blue-50
+                        dark:hover:bg-blue-950/30
+                      "
+                    >
+
+                      <h3 className="font-semibold">
+                        {service.name}
+                      </h3>
+
+                      <p className="
+                        text-sm
+                        text-zinc-500
+                        dark:text-zinc-400
+                        mt-2
+                      ">
+                        {service.description}
+                      </p>
+
+                      <p className="
+                        mt-3
+                        font-semibold
+                        text-blue-600
+                      ">
+                        ₱{Number(service.service_price).toFixed(2)}
+                      </p>
+
+                      {service.linked_products &&
+                        service.linked_products.length > 0 && (
+
+                        <div className="mt-4">
+
+                          <p className="
+                            text-xs
+                            font-semibold
+                            text-zinc-500
+                            mb-2
+                          ">
+                            Suggested Products
+                          </p>
+
+                          <div className="
+                            flex
+                            flex-wrap
+                            gap-2
+                          ">
+
+                            {service.linked_products
+                              .slice(0, 4)
+                              .map((product) => (
+
+                                <button
+                                  key={product.id}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+
+                                    triggerFlyToCart(
+                                      e,
+                                      product.name
+                                    );
+
+                                    addToCart(
+                                      product
+                                    );
+                                  }}
+                                  className="
+                                    text-xs
+                                    px-2
+                                    py-1
+                                    rounded-lg
+                                    bg-emerald-100
+                                    text-emerald-700
+                                    hover:bg-emerald-200
+                                  "
+                                >
+                                  {product.name}
+                                </button>
+
+                            ))}
+
+                          </div>
+
+                        </div>
+
+                      )}
+
+                    </button>
+
+                  ))}
+
+                </div>
+
+              </div>
+
+            )}
+
             {/* Product Grid */}
 
             <div
@@ -1720,9 +2028,10 @@ export default function POSPage() {
 
                 <button
                   key={product.id}
-                  onClick={() =>
-                    addToCart(product)
-                  }
+                  onClick={(e) => {
+                    triggerFlyToCart(e, product.name);
+                    addToCart(product);
+                  }}
                   className="
                     border
                     border-zinc-200
@@ -1756,15 +2065,22 @@ export default function POSPage() {
                         {product.name}
                       </h3>
 
-                      <p
-                        className="
-                          text-xs
-                          text-zinc-500
-                          dark:text-zinc-400
-                          mt-1
-                        "
-                      >
-                        {product.sku_barcode}
+                      <p className="
+                        text-xs
+                        text-zinc-500
+                        dark:text-zinc-400
+                        mt-1
+                      ">
+                        SKU: {product.sku_barcode}
+                      </p>
+
+                      <p className="
+                        text-xs
+                        text-zinc-500
+                        dark:text-zinc-400
+                        mt-1
+                      ">
+                        Brand: {product.brand || 'N/A'}
                       </p>
 
                     </div>
@@ -1838,9 +2154,38 @@ export default function POSPage() {
 
       </div>
 
+      {flyItems.map((flyItem) => (
+        <div
+          key={flyItem.id}
+          className="
+            fixed
+            z-[120]
+            pointer-events-none
+            bg-emerald-600
+            text-white
+            px-3
+            py-2
+            rounded-full
+            shadow-xl
+            text-xs
+            font-medium
+            animate-[flyToCart_0.7s_ease-in-out_forwards]
+          "
+          style={{
+            left: flyItem.startX,
+            top: flyItem.startY,
+            '--fly-x': `${flyItem.endX - flyItem.startX}px`,
+            '--fly-y': `${flyItem.endY - flyItem.startY}px`
+          } as React.CSSProperties}
+        >
+          {flyItem.name}
+        </div>
+      ))}
+
       {/* Floating Cart Button */}
 
       <button
+        ref={cartButtonRef}
         onClick={() =>
           setMobileCartOpen(true)
         }
@@ -1912,11 +2257,12 @@ export default function POSPage() {
               bottom-0
               left-0
               right-0
-              h-[90vh]
+              h-[92vh]
               bg-white
               dark:bg-zinc-900
               rounded-t-3xl
               p-4
+              sm:p-6
               flex
               flex-col
               overflow-hidden

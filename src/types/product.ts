@@ -8,7 +8,17 @@ export interface Product {
 
   sku_barcode: string;
 
-  category: string;
+  category?: string;
+
+  brand?: string;
+
+  supplier?: string;
+
+  unit_type?: string;
+
+  description?: string;
+
+  status?: 'active' | 'inactive';
 
   cost_price: number;
 
@@ -57,6 +67,16 @@ export interface CartItem {
   sku_barcode?: string;
 
   category?: string;
+
+  brand?: string;
+
+  supplier?: string;
+
+  unit_type?: string;
+
+  description?: string;
+
+  status?: 'active' | 'inactive';
 
   cost_price?: number;
 

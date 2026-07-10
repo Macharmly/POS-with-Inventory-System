@@ -66,6 +66,9 @@ export default function InventoryPage() {
   const [showAddModal, setShowAddModal] =
     useState(false);
 
+  const [successMessage, setSuccessMessage] =
+    useState('');
+
   const [newProduct, setNewProduct] =
     useState({
       name: '',
@@ -269,6 +272,16 @@ export default function InventoryPage() {
           .includes(search)
       );
     });
+  
+  const showSuccessPrompt = (
+    message: string
+  ) => {
+    setSuccessMessage(message);
+
+    setTimeout(() => {
+      setSuccessMessage('');
+    }, 2500);
+  };
 
   const handleAddProduct = async (
     e: React.FormEvent
@@ -324,6 +337,8 @@ export default function InventoryPage() {
         );
 
       setInventoryMovements(updatedMovements);
+
+      showSuccessPrompt('Product added successfully!');
 
       setShowAddModal(false);
 
@@ -572,7 +587,7 @@ export default function InventoryPage() {
       setShowEditModal(false);
       setEditingProductId(null);
 
-      alert('Product updated successfully!');
+      showSuccessPrompt('Product updated successfully!');
 
     } catch (error: any) {
 
@@ -621,7 +636,7 @@ export default function InventoryPage() {
 
     setInventoryMovements(updatedMovements);
 
-    alert('Product deleted successfully!');
+    showSuccessPrompt('Product deleted successfully!');
   };
 
   if (loading) {
@@ -656,6 +671,31 @@ export default function InventoryPage() {
     <AppLayout>
 
       <div className="space-y-6">
+
+      {successMessage && (
+        <div
+          className="
+            fixed
+            top-5
+            left-1/2
+            z-[100]
+            bg-emerald-600/95
+            backdrop-blur-md
+            border
+            border-emerald-500
+            text-white
+            px-5
+            py-3
+            rounded-lg
+            shadow-xl
+            text-sm
+            font-medium
+            animate-[fadePrompt_2.5s_ease-in-out_forwards]
+          "
+        >
+          {successMessage}
+        </div>
+      )}
 
         {/* Add Product Modal */}
 
